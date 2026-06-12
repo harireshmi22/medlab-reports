@@ -1,65 +1,78 @@
-import Image from "next/image";
+"use client"
+
+import { useEffect, useState } from "react"
+import LandingPage from "../components/Landing"
+import Header from "../components/Header"
+import Footer from "@/components/Footer"
 
 export default function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [currentUserRole, setCurrentUserRole] = useState<'patient' | 'admin'>('patient')
+  const [currentUserProfile, setCurrentUserProfile] = useState({
+    name: '',
+    patientId: '',
+    avatar: '',
+    email: ''
+  })
+
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token")
+    const role = localStorage.getItem("user_role")
+    
+    if (token && (role === 'patient' || role === 'admin')) {
+      setIsLoggedIn(true)
+      setCurrentUserRole(role)
+      
+      if (role === 'admin') {
+        setCurrentUserProfile({
+          name: 'Dr. Sarah Chen',
+          patientId: '',
+          avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCTGD7gHvWcehi15F5euALOPYLsRRZKrx3Rx5F2OGleEbdAJz5ix4OaNSTcpmLhZzoAOvw8T9yqgRCn2FbBjc27daMYDWrZoVOJMi4bUVWsDUlnlQOQQfr6Ie-i6SDn_xzYF3EtekMNzO0xcLWj5DEsh3rENhV36FdxONoGigCFJBNHmCsglC7jxcig98bAWd0FQUaJnPqOdfKI3_YqRb2-lbV_x6jCqoF0WvseNkof0Iyj3XxQ-5XWyFA9FQGoBX1N5-ff7Y2QJQ',
+          email: 'admin@medlabs.com'
+        })
+      } else {
+        setCurrentUserProfile({
+          name: 'Hari',
+          patientId: '1',
+          avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBpF2T5v2g6kd6FOwUZpDVw_rQ1JenZaS5YMSnK3ysw6YGVGDjkKKXv1oB7c5Nyjv_zMbi3SPfHK556YnStrCs8ZReV9Fp2hmsX8YYECMqcNMvIGXzo5NZPXafYeMOUkt_HRVHck93wT2ho-8QIEuO-lZcTuNk9jkcTG0w0Xfr6bAoEwxQDu2vpCze4ZkLi4zRp87pWoo7Gsjq1PYKOFp0R_7QCuEFAIj6pzeEZa85VRy67EhbsDGyYQO1FwvcdSvKtbCkEuYAzBA',
+          email: 'patient@medlabs.com'
+        })
+      }
+    }
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token")
+    localStorage.removeItem("user_role")
+    setIsLoggedIn(false)
+  }
+
+  const handleNavigate = (view: string) => {
+    if (view === 'ADMIN_DASHBOARD') {
+      window.location.href = '/admin/dashboard'
+    } else if (view === 'PASS_DASHBOARD') {
+      window.location.href = '/patient/dashboard'
+    } else if (view === 'LANDING') {
+      window.location.href = '/'
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+    <main className="min-h-screen flex flex-col justify-between">
+      <Header 
+        isLoggedIn={isLoggedIn}
+        currentUserRole={currentUserRole}
+        currentUserProfile={currentUserProfile}
+        onNavigate={handleNavigate}
+      />
+      <LandingPage 
+        isLoggedIn={isLoggedIn}
+        currentUserRole={currentUserRole}
+        currentUserProfile={currentUserProfile}
+        onLogout={handleLogout}
+        onNavigate={handleNavigate}
+      />
+      <Footer />
+    </main>
+  )
 }

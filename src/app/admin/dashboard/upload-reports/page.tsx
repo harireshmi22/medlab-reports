@@ -1,5 +1,6 @@
+"use client";
+
 import AddReport from '@/app/admin/component/AddReport'
-import React from 'react'
 
 const page = () => {
     return (

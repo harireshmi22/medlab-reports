@@ -6,10 +6,10 @@ MedLab Reports is a modern, high-performance pathology Laboratory Information Sy
 
 ## 🚀 Key Features
 
-*   **Admin Dashboard**: Real-time diagnostic statistics, automatic clinical alerts for critical values, and aggregate patient count telemetry.
-*   **Patient Profile Management**: Complete CRUD operations for clinical patient profiles, search capability, and pagination.
-*   **Dynamic Report Generation**: Electronic publication of blood panels, lipid profiles, and diagnostic chemistry with PDF attachments.
-*   **Secure Patient Dashboard**: Dedicated portal for patients to view, search, and download released laboratory reports.
+* **Admin Dashboard**: Real-time diagnostic statistics, automatic clinical alerts for critical values, and aggregate patient count telemetry.
+* **Patient Profile Management**: Complete CRUD operations for clinical patient profiles, search capability, and pagination.
+* **Dynamic Report Generation**: Electronic publication of blood panels, lipid profiles, and diagnostic chemistry with PDF attachments.
+* **Secure Patient Dashboard**: Dedicated portal for patients to view, search, and download released laboratory reports.
 
 ---
 
@@ -17,22 +17,22 @@ MedLab Reports is a modern, high-performance pathology Laboratory Information Sy
 
 The system is engineered for low latency, security, and scalability under high data volumes:
 
-*   **⚡ Client-Side Caching (SWR)**: Implemented SWR query caching across both Admin and Patient dashboards. Page transitions, active searching, and paginated navigation load instantly using cached telemetry, drastically decreasing DB read volume.
-*   **🏎️ Hybrid Server & Client Rendering (RSC)**: Initial stats and records are resolved server-side in Next.js Server Components. These are passed as `fallbackData` to client-side components to eliminate layout flashes and guarantee instant paint times.
-*   **📊 Server-Side Pagination & Search**: Query execution limits are pushed to the database level (10 records per page) with full-text fuzzy searching to minimize bandwidth and memory overhead.
-*   **🖼️ Image Optimization**: Uses Next.js `<Image>` with explicit width/height parameters, layout preservation, and lazy loading strategies.
-*   **🔐 Consolidated Auth Session Client**: Standardized on `@supabase/ssr` across all routes and client views to prevent session desynchronization.
+* **⚡ Client-Side Caching (SWR)**: Implemented SWR query caching across both Admin and Patient dashboards. Page transitions, active searching, and paginated navigation load instantly using cached telemetry, drastically decreasing DB read volume.
+* **🏎️ Hybrid Server & Client Rendering (RSC)**: Initial stats and records are resolved server-side in Next.js Server Components. These are passed as `fallbackData` to client-side components to eliminate layout flashes and guarantee instant paint times.
+* **📊 Server-Side Pagination & Search**: Query execution limits are pushed to the database level (10 records per page) with full-text fuzzy searching to minimize bandwidth and memory overhead.
+* **🖼️ Image Optimization**: Uses Next.js `<Image>` with explicit width/height parameters, layout preservation, and lazy loading strategies.
+* **🔐 Consolidated Auth Session Client**: Standardized on `@supabase/ssr` across all routes and client views to prevent session desynchronization.
 
 ---
 
 ## 🛠️ Tech Stack
 
-*   **Framework**: Next.js 16 (App Router + React 19)
-*   **Database & Auth**: Supabase Cloud (PostgreSQL + Auth + Storage)
-*   **Caching**: SWR (Stale-While-Revalidate)
-*   **Styling**: Tailwind CSS v4 (Sleek dark mode + custom colors)
-*   **Animations**: Motion (`motion/react`)
-*   **Icons**: Lucide React
+* **Framework**: Next.js 16 (App Router + React 19)
+* **Database & Auth**: Supabase Cloud (PostgreSQL + Auth + Storage)
+* **Caching**: SWR (Stale-While-Revalidate)
+* **Styling**: Tailwind CSS v4 (Sleek dark mode + custom colors)
+* **Animations**: Motion (`motion/react`)
+* **Icons**: Lucide React
 
 ---
 
@@ -72,5 +72,6 @@ npm run build
 ## 📄 Documentation References
 
 For more detailed technical analysis:
-*   [Scalable Architecture & Roadmap](file:///c:/Users/harir/Desktop/medlabs-report/ScalableArchitecture.md)
-*   [Walkthrough of Completed Fixes](file:///C:/Users/harir/.gemini/antigravity-ide/brain/e6db0b51-b667-4fd5-8e16-6747fdd43d98/walkthrough.md)
+
+* [Scalable Architecture & Roadmap](file:///c:/Users/harir/Desktop/medlabs-report/ScalableArchitecture.md)
+* [Walkthrough of Completed Fixes](file:///C:/Users/harir/.gemini/antigravity-ide/brain/e6db0b51-b667-4fd5-8e16-6747fdd43d98/walkthrough.md)

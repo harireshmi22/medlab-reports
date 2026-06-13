@@ -21,16 +21,24 @@ export default function AdminLogin() {
         setIsError(false)
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 1500))
+            const response = await fetch("/api/auth/admin/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            });
 
-            if (formData.email.trim().toLowerCase() === "admin@medlabs.com" && formData.password === "admin123") {
+            const data = await response.json();
+
+            if (data.success) {
                 setMessage("Login successful! Accessing LIS Core...")
-                localStorage.setItem("auth_token", "dummy_jwt_token_admin")
-                localStorage.setItem("user_role", "admin")
+                localStorage.setItem("auth_token", data.token)
+                localStorage.setItem("user_role", data.profile?.role || "admin")
                 router.push("/admin/dashboard")
             } else {
                 setIsError(true)
-                setMessage("Invalid admin credentials. Check the quick-fill helper below.")
+                setMessage(data.message || "Invalid credentials.")
             }
         } catch (error) {
             setIsError(true)
@@ -189,7 +197,7 @@ export default function AdminLogin() {
                                         name="email"
                                         value={formData.email}
                                         onChange={handleInputChange}
-                                        placeholder="admin@medlabs.com"
+                                        placeholder="admin@medlab.com"
                                         required
                                         className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
                                     />

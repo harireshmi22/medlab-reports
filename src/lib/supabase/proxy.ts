@@ -42,15 +42,66 @@ export async function updateSession(request: NextRequest) {
 
     const user = data?.claims
 
-    if (
-        !user &&
-        !request.nextUrl.pathname.startsWith('/login') &&
-        !request.nextUrl.pathname.startsWith('/auth')
-    ) {
-        // no user, potentially respond by redirecting the user to the login page
-        const url = request.nextUrl.clone()
-        url.pathname = '/login'
-        return NextResponse.redirect(url)
+    const pathname = request.nextUrl.pathname
+    const isAdminRoute = pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')
+    const isPatientRoute = pathname.startsWith('/patient') && !pathname.startsWith('/patient/login')
+    const isLoginRoute = pathname.startsWith('/admin/login') || pathname.startsWith('/patient/login')
+
+    if (isAdminRoute) {
+        if (!user) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/admin/login'
+            return NextResponse.redirect(url)
+        }
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.sub)
+            .single()
+
+        const role = profile?.role?.toLowerCase()
+        if (role !== 'admin' && role !== 'lab_staff') {
+            const url = request.nextUrl.clone()
+            url.pathname = '/admin/login'
+            return NextResponse.redirect(url)
+        }
+    } else if (isPatientRoute) {
+        if (!user) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/patient/login'
+            return NextResponse.redirect(url)
+        }
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.sub)
+            .single()
+
+        const role = profile?.role?.toLowerCase()
+        if (role !== 'patient') {
+            const url = request.nextUrl.clone()
+            url.pathname = '/patient/login'
+            return NextResponse.redirect(url)
+        }
+    } else if (isLoginRoute && user) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.sub)
+            .single()
+
+        const role = profile?.role?.toLowerCase()
+        if ((role === 'admin' || role === 'lab_staff') && pathname.startsWith('/admin/login')) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/admin/dashboard'
+            return NextResponse.redirect(url)
+        } else if (role === 'patient' && pathname.startsWith('/patient/login')) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/patient/dashboard'
+            return NextResponse.redirect(url)
+        }
     }
 
     // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're

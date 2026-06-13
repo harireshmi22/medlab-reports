@@ -2,9 +2,16 @@
 
 import { useEffect, useState } from "react";
 
+interface PatientApiReport {
+    id: string;
+    title: string;
+    report_no: string;
+    created_at: string;
+}
+
 export default function PatientReportsPage() {
-    const [reports, setReports] = useState<any[]>([]);
-    const [patient, setPatient] = useState<any>(null);
+    const [reports, setReports] = useState<PatientApiReport[]>([]);
+    const [patient, setPatient] = useState<{ name: string; patient_no: string } | null>(null);
 
     useEffect(() => {
         async function getReports() {

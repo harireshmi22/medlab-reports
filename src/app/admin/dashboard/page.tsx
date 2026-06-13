@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Sidebar from '@/app/patient/component/Sidebar'
 import AdminDashboard from '../component/AdminDashboard'
 import AddReport from '../component/AddReport'
@@ -10,11 +10,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
     Activity, 
     Bell,
-    Send
+    Send,
+    Loader2
 } from 'lucide-react'
 import Image from 'next/image'
-import { Report, Patient, DashboardSideTab } from '@/types'
-import { mockReports, mockPatients } from '@/mockData'
+import { Report, Patient, DashboardSideTab, ReportItem } from '@/types'
+import { createClient } from '@/lib/supabase/client'
 
 export default function AdminDashboardPage() {
     const [activeTab, setActiveTab] = useState<DashboardSideTab>('Dashboard')
@@ -26,31 +27,194 @@ export default function AdminDashboardPage() {
     const [alertMessage, setAlertMessage] = useState("")
 
     // Reports and Patients registry state
-    const [reports, setReports] = useState<Report[]>(mockReports)
-    const [patients, setPatients] = useState<Patient[]>(mockPatients)
+    const [reports, setReports] = useState<Report[]>([])
+    const [patients, setPatients] = useState<Patient[]>([])
+    const [isLoadingData, setIsLoadingData] = useState(true)
 
+    const fetchDashboardData = useCallback(async () => {
+        try {
+            const supabase = createClient()
 
+            // Fetch patients
+            const { data: dbPatients, error: pError } = await supabase
+                .from('patients')
+                .select('*')
+                .order('created_at', { ascending: false })
+
+            if (pError) throw pError
+
+            const mappedPatients: Patient[] = (dbPatients || []).map(p => ({
+                id: p.id,
+                name: p.name,
+                email: p.email || '',
+                age: p.age || 30,
+                gender: p.gender || 'Not specified',
+                bloodGroup: p.blood_group || 'O+',
+                avatar: p.avatar_url || `https://avatar.vercel.sh/${p.name}`,
+                phone: p.phone || ''
+            }))
+            setPatients(mappedPatients)
+
+            // Fetch reports
+            const { data: dbReports, error: rError } = await supabase
+                .from('reports')
+                .select(`
+                    *,
+                    patients (
+                        name
+                    ),
+                    report_items (
+                        *
+                    )
+                `)
+                .order('created_at', { ascending: false })
+
+            if (rError) throw rError
+
+            const mappedReports: Report[] = (dbReports || []).map(r => {
+                const items: ReportItem[] = (r.report_items || []).map((i: { id: string; test_name: string; result_value: string; unit: string; normal_range: string; flag: string }) => ({
+                    id: i.id,
+                    name: i.test_name,
+                    result: parseFloat(i.result_value) || 0,
+                    unit: i.unit || '',
+                    minNormal: parseFloat(i.normal_range?.split('-')[0]) || 0,
+                    maxNormal: parseFloat(i.normal_range?.split('-')[1]) || 0,
+                    status: (i.flag || 'NORMAL') as 'NORMAL' | 'BORDERLINE' | 'HIGH' | 'LOW' | 'CRITICAL'
+                }))
+
+                const isAlert = items.some(item => ['HIGH', 'LOW', 'CRITICAL'].includes(item.status))
+                const criticalNotes = items
+                    .filter(item => ['CRITICAL', 'HIGH'].includes(item.status))
+                    .map(item => `elevated ${item.name}`)
+                    .join(' and ')
+
+                return {
+                    id: r.id,
+                    labRef: r.report_no || 'L-UNKNOWN',
+                    patientId: r.patient_id,
+                    patientName: r.patients?.name || 'Unknown Patient',
+                    date: new Date(r.published_at || r.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+                    title: r.status === 'published' ? (items.length > 3 ? 'Comprehensive Blood Panel' : 'Lipid Profile & Glucose') : 'Pending Blood Chemistry',
+                    referrer: 'Dr. Sarah Miller',
+                    patientAlertRequired: isAlert,
+                    alertText: isAlert
+                        ? `Attention Required: Values parsed indicate immediate consultation range regarding ${criticalNotes || 'blood densities'}.`
+                        : undefined,
+                    doctorRemarks: r.notes || (isAlert
+                        ? `The patient shows elevated thresholds for ${criticalNotes}. Advised immediate follow-up.`
+                        : `Patient metrics demonstrate excellent overall physiological wellness.`),
+                    labNote: 'Processed via Supabase database client.',
+                    items,
+                    pdf_url: r.pdf_url || undefined
+                }
+            })
+            setReports(mappedReports)
+        } catch (err) {
+            console.error('Error fetching dashboard data:', err)
+        } finally {
+            setIsLoadingData(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        const load = async () => {
+            await fetchDashboardData()
+        }
+        load()
+    }, [fetchDashboardData])
 
     // Handler to save manual report entry
-    const handleAddReportCommit = (newReport: Report) => {
-        setReports(prev => [newReport, ...prev])
-        setAlertMessage(`Successfully verified and published report for ${newReport.patientName}!`)
-        setTimeout(() => setAlertMessage(""), 4000)
-        setIsAddReportOpen(false)
-        
-        // Auto navigate to the newly added report
-        setSelectedReportId(newReport.id)
-        setActiveTab('Reports')
+    const handleAddReportCommit = async (newReport: Report) => {
+        try {
+            const supabase = createClient()
+
+            // 1. Insert report
+            const { data: reportData, error: reportError } = await supabase
+                .from('reports')
+                .insert({
+                    report_no: newReport.id,
+                    patient_id: newReport.patientId,
+                    status: 'published',
+                    notes: newReport.doctorRemarks,
+                    pdf_url: newReport.pdf_url,
+                    published_at: new Date().toISOString()
+                })
+                .select()
+                .single()
+
+            if (reportError) throw reportError
+
+            // 2. Insert items
+            const itemsToInsert = newReport.items.map(item => ({
+                report_id: reportData.id,
+                test_name: item.name,
+                result_value: item.result.toString(),
+                unit: item.unit,
+                normal_range: `${item.minNormal} - ${item.maxNormal}`,
+                flag: item.status
+            }))
+
+            const { error: itemsError } = await supabase
+                .from('report_items')
+                .insert(itemsToInsert)
+
+            if (itemsError) throw itemsError
+
+            setAlertMessage(`Successfully verified and published report for ${newReport.patientName}!`)
+            setTimeout(() => setAlertMessage(""), 4000)
+            setIsAddReportOpen(false)
+            
+            // Reload database state
+            await fetchDashboardData()
+
+            // Auto navigate to the newly added report
+            setSelectedReportId(reportData.id)
+            setActiveTab('Reports')
+
+        } catch (err) {
+            console.error('Error saving report to DB:', err)
+            setAlertMessage('Failed to save report to database.')
+            setTimeout(() => setAlertMessage(""), 4000)
+        }
     }
 
     // Handler to add patient locally
-    const handleAddPatientLocal = (newPatient: Patient) => {
-        setPatients(prev => [newPatient, ...prev])
+    const handleAddPatientLocal = async (newPatient: Patient) => {
+        try {
+            const supabase = createClient()
+            const { error } = await supabase
+                .from('patients')
+                .insert({
+                    name: newPatient.name,
+                    email: newPatient.email,
+                    age: newPatient.age,
+                    gender: newPatient.gender,
+                    phone: newPatient.phone,
+                    blood_group: newPatient.bloodGroup,
+                    avatar_url: newPatient.avatar
+                })
+
+            if (error) throw error
+            await fetchDashboardData()
+        } catch (err) {
+            console.error('Error saving patient to DB:', err)
+        }
     }
 
 
 
     const currentSelectedReport = reports.find(r => r.id === selectedReportId)
+
+    if (isLoadingData) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans">
+                <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="w-10 h-10 text-[#004e9f] animate-spin" />
+                    <p className="text-slate-500 text-sm font-semibold tracking-wide">Loading LIS telemetry...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 flex font-sans">
@@ -67,9 +231,14 @@ export default function AdminDashboardPage() {
                 }}
                 onOpenAddReport={() => setIsAddReportOpen(true)}
                 currentUserRole="admin"
-                onLogout={() => {
+                onLogout={async () => {
                     localStorage.removeItem("auth_token")
                     localStorage.removeItem("user_role")
+                    try {
+                        await fetch("/api/auth/logout", { method: "POST" })
+                    } catch (err) {
+                        console.error("Logout error:", err)
+                    }
                     window.location.href = '/'
                 }}
                 isOpen={isMobileSidebarOpen}

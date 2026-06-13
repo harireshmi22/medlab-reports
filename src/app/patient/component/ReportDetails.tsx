@@ -353,7 +353,7 @@ export default function ReportDetails({ report, onBack, patients }: ReportDetail
                 <div className="p-4 bg-slate-50 border-l-4 border-l-[#004e9f] rounded-r-xl">
                   <p className="font-bold text-[#004e9f] mb-1.5">Dr. Sarah Miller - Pathologist</p>
                   <p className="italic font-medium text-slate-755 leading-relaxed">
-                    "{report.doctorRemarks}"
+                    &quot;{report.doctorRemarks}&quot;
                   </p>
                 </div>
               )}

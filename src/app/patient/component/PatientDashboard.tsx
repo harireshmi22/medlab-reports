@@ -157,7 +157,15 @@ export default function PatientDashboard({ onNavigateToReport, reports, currentU
   };
 
   // Pre-configured list of sample timeline reports matches mockup exactly
-  const historyItems = reports.length > 0 
+  interface HistoryItem {
+    id: string;
+    title: string;
+    date: string;
+    icon: React.ReactNode;
+    pdf_url?: string;
+  }
+
+  const historyItems: HistoryItem[] = reports.length > 0 
     ? reports.map(rep => {
         let icon = <FileSpreadsheet className="w-5 h-5 text-blue-600" />;
         if (rep.title.toLowerCase().includes('lipid') || rep.title.toLowerCase().includes('glucose') || rep.title.toLowerCase().includes('cholesterol')) {
@@ -171,14 +179,15 @@ export default function PatientDashboard({ onNavigateToReport, reports, currentU
           id: rep.id,
           title: rep.title,
           date: rep.date,
-          icon
+          icon,
+          pdf_url: rep.pdf_url
         };
       })
     : [
-        { id: 'ML-8842-2023', title: 'Blood Panel', date: 'Oct 24, 2024', icon: <FileSpreadsheet className="w-5 h-5 text-blue-600" /> },
-        { id: 'ML-8842-2023', title: 'Lipid Profile', date: 'Aug 12, 2024', icon: <Activity className="w-5 h-5 text-blue-600" /> },
-        { id: 'ML-88209', title: 'Liver Function', date: 'Jun 05, 2024', icon: <Gauge className="w-5 h-5 text-blue-600" /> },
-        { id: 'ML-88209', title: 'CBC Routine', date: 'Mar 19, 2024', icon: <Droplet className="w-5 h-5 text-blue-600" /> }
+        { id: 'ML-8842-2023', title: 'Blood Panel', date: 'Oct 24, 2024', icon: <FileSpreadsheet className="w-5 h-5 text-blue-600" />, pdf_url: undefined },
+        { id: 'ML-8842-2023', title: 'Lipid Profile', date: 'Aug 12, 2024', icon: <Activity className="w-5 h-5 text-blue-600" />, pdf_url: undefined },
+        { id: 'ML-88209', title: 'Liver Function', date: 'Jun 05, 2024', icon: <Gauge className="w-5 h-5 text-blue-600" />, pdf_url: undefined },
+        { id: 'ML-88209', title: 'CBC Routine', date: 'Mar 19, 2024', icon: <Droplet className="w-5 h-5 text-blue-600" />, pdf_url: undefined }
       ];
 
   const [bookingStatus, setBookingStatus] = useState<boolean>(false);
@@ -433,8 +442,8 @@ export default function PatientDashboard({ onNavigateToReport, reports, currentU
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    if ((item as any).pdf_url) {
-                      window.open((item as any).pdf_url, '_blank');
+                    if (item.pdf_url) {
+                      window.open(item.pdf_url, '_blank');
                     } else {
                       alert(`Starting secure file download folder for ${item.title} PDF archive.`);
                     }
@@ -459,7 +468,7 @@ export default function PatientDashboard({ onNavigateToReport, reports, currentU
           <div className="flex-1">
             <h4 className="text-sm font-bold text-slate-900 leading-none">Understanding Reference Ranges</h4>
             <p className="text-xs text-slate-500 mt-2 leading-relaxed font-semibold">
-              Your laboratory results are compared to ranges determined by clinical studies. "Normal" signifies your value falls within the expected healthy demographic range. Consult your physician for a personalized interpretation of these findings.
+              Your laboratory results are compared to ranges determined by clinical studies. &quot;Normal&quot; signifies your value falls within the expected healthy demographic range. Consult your physician for a personalized interpretation of these findings.
             </p>
           </div>
           <button 

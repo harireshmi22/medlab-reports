@@ -129,9 +129,10 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
           resetForm();
         }, 1500);
 
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error registering patient:', err);
-        setError(err.message || 'Failed to create patient account.');
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        setError(errorMessage || 'Failed to create patient account.');
       } finally {
         setLoading(false);
       }

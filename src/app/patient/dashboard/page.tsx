@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Sidebar from '../component/Sidebar'
 import PatientDashboard from '../component/PatientDashboard'
 import ReportDetails from '../component/ReportDetails'
@@ -8,19 +8,151 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     Activity,
     Bell,
-    Send
+    Send,
+    Loader2
 } from 'lucide-react'
-import { ViewState, DashboardSideTab, Report } from '@/types'
-import { mockReports } from '@/mockData'
+import { ViewState, DashboardSideTab, Report, ReportItem } from '@/types'
 import Image from 'next/image'
+import { createClient } from '@/lib/supabase/client'
 
 export default function PatientDashboardPage() {
     const [activeTab, setActiveTab] = useState<DashboardSideTab>('Dashboard')
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
     const [selectedReportId, setSelectedReportId] = useState<string | null>(null)
-    const [reports, setReports] = useState<Report[]>(mockReports)
+    
+    const [reports, setReports] = useState<Report[]>([])
+    const [currentUserProfile, setCurrentUserProfile] = useState<{
+        name: string;
+        patientId: string;
+        avatar: string;
+        email: string;
+    } | null>(null)
+    const [isLoadingData, setIsLoadingData] = useState(true)
+
+    const fetchPatientData = useCallback(async () => {
+        try {
+            const supabase = createClient()
+            const { data: { user }, error: authError } = await supabase.auth.getUser()
+            if (authError || !user) {
+                window.location.href = '/patient/login'
+                return
+            }
+
+            // Fetch patient clinical details linked to this auth user
+            let patientData = null
+            const { data: pData, error: pError } = await supabase
+                .from('patients')
+                .select('*')
+                .eq('profile_id', user.id)
+                .maybeSingle()
+
+            if (pData) {
+                patientData = pData
+            } else {
+                // Try by email
+                const { data: pDataByEmail } = await supabase
+                    .from('patients')
+                    .select('*')
+                    .eq('email', user.email)
+                    .maybeSingle()
+                
+                if (pDataByEmail) {
+                    patientData = pDataByEmail
+                }
+            }
+
+            if (!patientData) {
+                console.error('No patient record found in database for auth user:', user.email)
+                setIsLoadingData(false)
+                return
+            }
+
+            setCurrentUserProfile({
+                name: patientData.name,
+                patientId: `P-${patientData.id.slice(0, 6).toUpperCase()}`,
+                avatar: patientData.avatar_url || `https://avatar.vercel.sh/${patientData.name}`,
+                email: patientData.email || ''
+            })
+
+            // Fetch reports for this patient
+            const { data: dbReports, error: reportsError } = await supabase
+                .from('reports')
+                .select(`
+                    *,
+                    report_items (
+                        *
+                    )
+                `)
+                .eq('patient_id', patientData.id)
+                .order('created_at', { ascending: false })
+
+            if (reportsError) throw reportsError
+
+            const mappedReports: Report[] = (dbReports || []).map(r => {
+                const items: ReportItem[] = (r.report_items || []).map((i: { id: string; test_name: string; result_value: string; unit: string; normal_range: string; flag: string }) => ({
+                    id: i.id,
+                    name: i.test_name,
+                    result: parseFloat(i.result_value) || 0,
+                    unit: i.unit || '',
+                    minNormal: parseFloat(i.normal_range?.split('-')[0]) || 0,
+                    maxNormal: parseFloat(i.normal_range?.split('-')[1]) || 0,
+                    status: (i.flag || 'NORMAL') as 'NORMAL' | 'BORDERLINE' | 'HIGH' | 'LOW' | 'CRITICAL'
+                }))
+
+                const isAlert = items.some(item => ['HIGH', 'LOW', 'CRITICAL'].includes(item.status))
+                const criticalNotes = items
+                    .filter(item => ['CRITICAL', 'HIGH'].includes(item.status))
+                    .map(item => `elevated ${item.name}`)
+                    .join(' and ')
+
+                return {
+                    id: r.id,
+                    labRef: r.report_no || 'L-UNKNOWN',
+                    patientId: r.patient_id,
+                    patientName: patientData.name,
+                    date: new Date(r.published_at || r.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+                    title: r.status === 'published' ? (items.length > 3 ? 'Comprehensive Blood Panel' : 'Lipid Profile & Glucose') : 'Pending Blood Chemistry',
+                    referrer: 'Dr. Sarah Miller',
+                    patientAlertRequired: isAlert,
+                    alertText: isAlert
+                        ? `Attention Required: Values parsed indicate immediate consultation range regarding ${criticalNotes || 'blood densities'}.`
+                        : undefined,
+                    doctorRemarks: r.notes || (isAlert
+                        ? `The patient shows elevated thresholds for ${criticalNotes}. Advised immediate follow-up.`
+                        : `Patient metrics demonstrate excellent overall physiological wellness.`),
+                    labNote: 'Processed via Supabase database client.',
+                    items,
+                    pdf_url: r.pdf_url || undefined
+                }
+            })
+
+            setReports(mappedReports)
+        } catch (err) {
+            console.error('Error fetching patient dashboard records:', err)
+        } finally {
+            setIsLoadingData(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        const load = async () => {
+            await fetchPatientData()
+        }
+        load()
+    }, [fetchPatientData])
 
     const currentSelectedReport = reports.find(r => r.id === selectedReportId)
+
+    if (isLoadingData) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans">
+                <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="w-10 h-10 text-[#004e9f] animate-spin" />
+                    <p className="text-slate-500 text-sm font-semibold tracking-wide">Retrieving patient health records...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 flex font-sans">
@@ -37,14 +169,15 @@ export default function PatientDashboardPage() {
                 }}
                 onOpenAddReport={() => { }}
                 currentUserRole="patient"
-                currentUserProfile={{
-                    name: "John Doe",
-                    patientId: "P-409122",
-                    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuAhVNkbYwWmffHwwpAB6BQUi7ghb0wxiUOBEOAAXjVwSkFm1fSpfMUmue8WTk-VypCB7OMYOh5bBlOKOOhWwjwGMNh1UFRosynieP4dnk50r20Mt08OUtFABFvpd3ea6LQoN4VN2nycW-eGeeFuwv-3bO52JTE0to2mDtl4IsKHTR1zAaL0hjiAm-RK_v-1RHHu37QcSoWbJeC8n0vIGfIowJTi_baN_1Ax9kPQXbGCcAf8b3jzq5ohjvYlYC7txxKrubcnjoas1g"
-                }}
-                onLogout={() => {
+                currentUserProfile={currentUserProfile || undefined}
+                onLogout={async () => {
                     localStorage.removeItem("auth_token")
                     localStorage.removeItem("user_role")
+                    try {
+                        await fetch("/api/auth/logout", { method: "POST" })
+                    } catch (err) {
+                        console.error("Logout error:", err)
+                    }
                     window.location.href = '/'
                 }}
                 isOpen={isMobileSidebarOpen}
@@ -75,13 +208,13 @@ export default function PatientDashboardPage() {
                             <div className="w-8 h-8 rounded-full overflow-hidden border border-[#004e9f]/20">
                                 <Image
                                     alt="Profile"
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhVNkbYwWmffHwwpAB6BQUi7ghb0wxiUOBEOAAXjVwSkFm1fSpfMUmue8WTk-VypCB7OMYOh5bBlOKOOhWwjwGMNh1UFRosynieP4dnk50r20Mt08OUtFABFvpd3ea6LQoN4VN2nycW-eGeeFuwv-3bO52JTE0to2mDtl4IsKHTR1zAaL0hjiAm-RK_v-1RHHu37QcSoWbJeC8n0vIGfIowJTi_baN_1Ax9kPQXbGCcAf8b3jzq5ohjvYlYC7txxKrubcnjoas1g"
+                                    src={currentUserProfile?.avatar || "https://avatar.vercel.sh/patient"}
                                     width={32}
                                     height={32}
                                     className="object-cover w-full h-full rounded-full"
                                 />
                             </div>
-                            <span className="hidden sm:inline text-xs font-bold text-slate-700">John Doe</span>
+                            <span className="hidden sm:inline text-xs font-bold text-slate-700">{currentUserProfile?.name || 'Patient'}</span>
                         </div>
                     </div>
                 </header>
@@ -102,12 +235,7 @@ export default function PatientDashboardPage() {
                                         setSelectedReportId(repId)
                                         setActiveTab('Reports')
                                     }}
-                                    currentUserProfile={{
-                                        name: "John Doe",
-                                        patientId: "P-409122",
-                                        avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuAhVNkbYwWmffHwwpAB6BQUi7ghb0wxiUOBEOAAXjVwSkFm1fSpfMUmue8WTk-VypCB7OMYOh5bBlOKOOhWwjwGMNh1UFRosynieP4dnk50r20Mt08OUtFABFvpd3ea6LQoN4VN2nycW-eGeeFuwv-3bO52JTE0to2mDtl4IsKHTR1zAaL0hjiAm-RK_v-1RHHu37QcSoWbJeC8n0vIGfIowJTi_baN_1Ax9kPQXbGCcAf8b3jzq5ohjvYlYC7txxKrubcnjoas1g",
-                                        email: "john.doe@medical.com"
-                                    }}
+                                    currentUserProfile={currentUserProfile || undefined}
                                 />
                             </motion.div>
                         )}

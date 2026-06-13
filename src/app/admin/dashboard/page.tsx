@@ -181,23 +181,9 @@ export default function AdminDashboardPage() {
     // Handler to add patient locally
     const handleAddPatientLocal = async (newPatient: Patient) => {
         try {
-            const supabase = createClient()
-            const { error } = await supabase
-                .from('patients')
-                .insert({
-                    name: newPatient.name,
-                    email: newPatient.email,
-                    age: newPatient.age,
-                    gender: newPatient.gender,
-                    phone: newPatient.phone,
-                    blood_group: newPatient.bloodGroup,
-                    avatar_url: newPatient.avatar
-                })
-
-            if (error) throw error
             await fetchDashboardData()
         } catch (err) {
-            console.error('Error saving patient to DB:', err)
+            console.error('Error reloading data after patient register:', err)
         }
     }
 

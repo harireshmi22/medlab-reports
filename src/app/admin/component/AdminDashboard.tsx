@@ -1,5 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import Image from 'next/image';
+
 import {
   Users,
   CheckCircle,
@@ -272,10 +274,12 @@ export default function AdminDashboard({ onNavigateToReport, reports, patients }
 
           {/* Advanced machine analytics graphic banner */}
           <div className="rounded-2xl overflow-hidden shadow-sm relative group bg-slate-950">
-            <img
+            <Image
               alt="Clinical automated laboratory visuals"
               className="w-full h-48 object-cover opacity-60 group-hover:scale-105 transition-transform duration-500"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQzCCwm4CLqPAit0JZ-pl1Jqo2tfrKpKQ9u6p7kRakeHZtJ0HSkox5ecv8m4h81gFA4YwQRoMYKp5a8Bc4eh3QvdyjEytaQW9NF-_BiNU25_t6eW68lVjw8FIDWwYOXCahqtYwoQ7UH4GMhqfTu6QNZY6ROwtxHvhb2r1VNBeF-eQBxkOwSG4jr5aFuHCpF4d-3QxC5Q6JwXvk7WxQYiZsjb3HyAbERyQv703W_pZE3OpSQWKKld6-0-a2LAeO7EC2ue9wLb2S1Q"
+              width={600}
+              height={192}
             />
             {/* Linear background overlay */}
             <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-900/40 to-transparent p-5 flex flex-col justify-end text-white">

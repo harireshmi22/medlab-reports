@@ -69,108 +69,44 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
       return;
     }
 
-    const supabase = getSupabaseClient();
-    const config = getSupabaseConfig();
-
-    if (supabase && config) {
-      try {
-        // 1. Create a non-persistent client to sign up the new user without logging the admin out
-        const tempClient = createClient(config.url, config.anonKey, {
-          auth: { persistSession: false }
-        });
-
-        const { data: authData, error: authError } = await tempClient.auth.signUp({
-          email: email.trim(),
-          password: password.trim(),
-          options: {
-            data: {
-              name: name.trim(),
-              role: 'patient'
-            }
-          }
-        });
-
-        if (authError) throw authError;
-        if (!authData.user) throw new Error('No user data returned from authentication.');
-
-        const userId = authData.user.id;
-
-        // 2. Insert clinical record into patients table using the admin's main client
-        const { error: patientError } = await supabase
-          .from('patients')
-          .insert([{
-            profile_id: userId,
-            name: name.trim(),
-            email: email.trim(),
-            age: parseInt(age) || 35,
-            gender,
-            blood_group: bloodGroup,
-            phone: phone.trim(),
-            avatar_url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBpF2T5v2g6kd6FOwUZpDVw_rQ1JenZaS5YMSnK3ysw6YGVGDjkKKXv1oB7c5Nyjv_zMbi3SPfHK556YnStrCs8ZReV9Fp2hmsX8YYECMqcNMvIGXzo5NZPXafYeMOUkt_HRVHck93wT2ho-8QIEuO-lZcTuNk9jkcTG0w0Xfr6bAoEwxQDu2vpCze4ZkLi4zRp87pWoo7Gsjq1PYKOFp0R_7QCuEFAIj6pzeEZa85VRy67EhbsDGyYQO1FwvcdSvKtbCkEuYAzBA'
-          }]);
-
-        if (patientError) throw patientError;
-
-        // 3. Callback to app layout state for local append
-        onAddPatientLocal({
-          id: userId,
+    try {
+      const response = await fetch('/api/patient', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           name: name.trim(),
           email: email.trim(),
+          password: password.trim(),
           age: parseInt(age) || 35,
           gender,
           bloodGroup,
           phone: phone.trim(),
-          avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBpF2T5v2g6kd6FOwUZpDVw_rQ1JenZaS5YMSnK3ysw6YGVGDjkKKXv1oB7c5Nyjv_zMbi3SPfHK556YnStrCs8ZReV9Fp2hmsX8YYECMqcNMvIGXzo5NZPXafYeMOUkt_HRVHck93wT2ho-8QIEuO-lZcTuNk9jkcTG0w0Xfr6bAoEwxQDu2vpCze4ZkLi4zRp87pWoo7Gsjq1PYKOFp0R_7QCuEFAIj6pzeEZa85VRy67EhbsDGyYQO1FwvcdSvKtbCkEuYAzBA',
-        });
+        }),
+      });
 
-        setSuccess(true);
-        setTimeout(() => {
-          setIsModalOpen(false);
-          resetForm();
-        }, 1500);
+      const data = await response.json();
 
-      } catch (err) {
-        console.error('Error registering patient:', err);
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        setError(errorMessage || 'Failed to create patient account.');
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create patient account.');
       }
-    } else {
-      // Offline/Local Simulated registration
+
+      // Callback to app layout state for local append
+      onAddPatientLocal(data.patient);
+
+      setSuccess(true);
       setTimeout(() => {
-        const mockId = `p-${Date.now()}`;
-        const newPatient: Patient = {
-          id: mockId,
-          name: name.trim(),
-          email: email.trim(),
-          age: parseInt(age) || 35,
-          gender,
-          bloodGroup,
-          phone: phone.trim(),
-          avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBpF2T5v2g6kd6FOwUZpDVw_rQ1JenZaS5YMSnK3ysw6YGVGDjkKKXv1oB7c5Nyjv_zMbi3SPfHK556YnStrCs8ZReV9Fp2hmsX8YYECMqcNMvIGXzo5NZPXafYeMOUkt_HRVHck93wT2ho-8QIEuO-lZcTuNk9jkcTG0w0Xfr6bAoEwxQDu2vpCze4ZkLi4zRp87pWoo7Gsjq1PYKOFp0R_7QCuEFAIj6pzeEZa85VRy67EhbsDGyYQO1FwvcdSvKtbCkEuYAzBA',
-        };
+        setIsModalOpen(false);
+        resetForm();
+      }, 1500);
 
-        // Save simulated credentials to auth DB locally
-        const existingUsersRaw = localStorage.getItem('medlab_simulated_users');
-        const users = existingUsersRaw ? JSON.parse(existingUsersRaw) : [];
-        users.push({
-          id: mockId,
-          email: email.trim(),
-          password: password.trim(),
-          name: name.trim(),
-          role: 'patient'
-        });
-        localStorage.setItem('medlab_simulated_users', JSON.stringify(users));
-
-        onAddPatientLocal(newPatient);
-        setSuccess(true);
-        setTimeout(() => {
-          setIsModalOpen(false);
-          resetForm();
-        }, 1500);
-        setLoading(false);
-      }, 1000);
+    } catch (err) {
+      console.error('Error registering patient:', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage || 'Failed to create patient account.');
+    } finally {
+      setLoading(false);
     }
   };
 

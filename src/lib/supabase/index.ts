@@ -23,7 +23,7 @@ export function getSupabaseConfig(): SupabaseConfig | null {
 
   // Fallback to environment variables
   const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (envUrl && envKey) {
     return { url: envUrl, anonKey: envKey };

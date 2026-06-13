@@ -16,6 +16,7 @@ import {
 import Image from 'next/image'
 import { Report, Patient, DashboardSideTab, ReportItem } from '@/types'
 import { createClient } from '@/lib/supabase/client'
+import useSWR from 'swr'
 
 interface DashboardClientProps {
   initialPatients: Patient[];
@@ -29,6 +30,151 @@ interface DashboardClientProps {
   initialPatientsTotal: number;
   initialReportsTotal: number;
 }
+
+interface DashboardData {
+  patients: Patient[];
+  patientsTotal: number;
+  reports: Report[];
+  reportsTotal: number;
+  statsCounts: {
+    totalPatients: number;
+    totalReports: number;
+    pendingReports: number;
+    criticalReports: number;
+  };
+}
+
+const dashboardFetcher = async (key: [string, number, string, number]): Promise<DashboardData> => {
+  const [_, pPage, pSearch, rPage] = key;
+  const supabase = createClient();
+
+  // 1. Fetch exact database counts for stats (to keep stats accurate without fetching all rows)
+  const { count: totalPatientsCount } = await supabase
+      .from('patients')
+      .select('*', { count: 'exact', head: true });
+  
+  const { count: totalReportsCount } = await supabase
+      .from('reports')
+      .select('*', { count: 'exact', head: true });
+
+  // Count pending/alert and critical from report_items (distinct count of report_ids)
+  const { data: alertItems } = await supabase
+      .from('report_items')
+      .select('report_id')
+      .in('flag', ['HIGH', 'LOW', 'CRITICAL']);
+  const uniquePendingIds = new Set(alertItems?.map(item => item.report_id) || []);
+  const pendingCountVal = uniquePendingIds.size;
+
+  const { data: criticalItems } = await supabase
+      .from('report_items')
+      .select('report_id')
+      .eq('flag', 'CRITICAL');
+  const uniqueCriticalIds = new Set(criticalItems?.map(item => item.report_id) || []);
+  const criticalCountVal = uniqueCriticalIds.size;
+
+  const statsCounts = {
+      totalPatients: totalPatientsCount || 0,
+      totalReports: totalReportsCount || 0,
+      pendingReports: pendingCountVal,
+      criticalReports: criticalCountVal
+  };
+
+  // 2. Fetch paginated patients matching search query (10 per page)
+  let pQuery = supabase
+      .from('patients')
+      .select('*, reports(count)', { count: 'exact' });
+
+  if (pSearch.trim()) {
+      pQuery = pQuery.or(`name.ilike.%${pSearch}%,email.ilike.%${pSearch}%,phone.ilike.%${pSearch}%`);
+  }
+
+  pQuery = pQuery.order('created_at', { ascending: false });
+
+  const pFrom = (pPage - 1) * 10;
+  const pTo = pFrom + 10 - 1;
+
+  const { data: dbPatients, count: pCount, error: pError } = await pQuery.range(pFrom, pTo);
+
+  if (pError) throw pError;
+
+  const mappedPatients: Patient[] = (dbPatients || []).map((p: Record<string, any>) => ({
+      id: p.id as string,
+      name: p.name as string,
+      email: (p.email as string) || '',
+      age: (p.age as number) || 30,
+      gender: (p.gender as string) || 'Not specified',
+      bloodGroup: (p.blood_group as string) || 'O+',
+      avatar: (p.avatar_url as string) || `https://avatar.vercel.sh/${p.name}`,
+      phone: (p.phone as string) || '',
+      reportsCount: (p.reports as any)?.[0]?.count || 0
+  }));
+
+  // 3. Fetch paginated reports (10 per page)
+  const rFrom = (rPage - 1) * 10;
+  const rTo = rFrom + 10 - 1;
+
+  const { data: dbReports, count: rCount, error: rError } = await supabase
+      .from('reports')
+      .select(`
+          *,
+          patients (
+              name
+          ),
+          report_items (
+              *
+          )
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(rFrom, rTo);
+
+  if (rError) throw rError;
+
+  const mappedReports: Report[] = (dbReports || []).map(r => {
+      const items: ReportItem[] = (r.report_items || []).map((i: any) => ({
+          id: i.id,
+          name: i.test_name,
+          result: parseFloat(i.result_value) || 0,
+          unit: i.unit || '',
+          minNormal: parseFloat(i.normal_range?.split('-')[0]) || 0,
+          maxNormal: parseFloat(i.normal_range?.split('-')[1]) || 0,
+          status: (i.flag || 'NORMAL') as 'NORMAL' | 'BORDERLINE' | 'HIGH' | 'LOW' | 'CRITICAL'
+      }));
+
+      const isAlert = items.some(item => ['HIGH', 'LOW', 'CRITICAL'].includes(item.status));
+      const criticalNotes = items
+          .filter(item => ['CRITICAL', 'HIGH'].includes(item.status))
+          .map(item => `elevated ${item.name}`)
+          .join(' and ');
+
+      return {
+          id: r.id,
+          labRef: r.report_no || 'L-UNKNOWN',
+          patientId: r.patient_id,
+          patientName: r.patients?.name || 'Unknown Patient',
+          date: new Date(r.published_at || r.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+          title: r.status === 'published' ? (items.length > 3 ? 'Comprehensive Blood Panel' : 'Lipid Profile & Glucose') : 'Pending Blood Chemistry',
+          referrer: 'Dr. Sarah Miller',
+          patientAlertRequired: isAlert,
+          alertText: isAlert
+              ? `Attention Required: Values parsed indicate immediate consultation range regarding ${criticalNotes || 'blood densities'}.`
+              : undefined,
+          doctorRemarks: r.notes || (isAlert
+              ? `The patient shows elevated thresholds for ${criticalNotes}. Advised immediate follow-up.`
+              : `Patient metrics demonstrate excellent overall physiological wellness.`),
+          labNote: 'Processed via Supabase database client.',
+          items,
+          pdf_url: r.pdf_url || undefined
+      };
+  });
+
+  return {
+      patients: mappedPatients,
+      patientsTotal: pCount || 0,
+      reports: mappedReports,
+      reportsTotal: rCount || 0,
+      statsCounts
+  };
+};
 
 export default function DashboardClient({
   initialPatients,
@@ -45,163 +191,35 @@ export default function DashboardClient({
     // Alert state
     const [alertMessage, setAlertMessage] = useState("")
 
-    // Reports and Patients registry state
-    const [reports, setReports] = useState<Report[]>(initialReports)
-    const [patients, setPatients] = useState<Patient[]>(initialPatients)
-    const [isLoadingData, setIsLoadingData] = useState(false)
-
     // Pagination & Search state
     const [patientsPage, setPatientsPage] = useState(1)
     const [patientsSearch, setPatientsSearch] = useState('')
-    const [patientsTotal, setPatientsTotal] = useState(initialPatientsTotal)
-    
     const [reportsPage, setReportsPage] = useState(1)
-    const [reportsTotal, setReportsTotal] = useState(initialReportsTotal)
 
-    // Cached counts for stats card display
-    const [statsCounts, setStatsCounts] = useState(initialStats)
-
-    const fetchDashboardData = useCallback(async () => {
-        try {
-            const supabase = createClient()
-
-            // 1. Fetch exact database counts for stats (to keep stats accurate without fetching all rows)
-            const { count: totalPatientsCount } = await supabase
-                .from('patients')
-                .select('*', { count: 'exact', head: true })
-            
-            const { count: totalReportsCount } = await supabase
-                .from('reports')
-                .select('*', { count: 'exact', head: true })
-
-            // Count pending/alert and critical from report_items (distinct count of report_ids)
-            const { data: alertItems } = await supabase
-                .from('report_items')
-                .select('report_id')
-                .in('flag', ['HIGH', 'LOW', 'CRITICAL'])
-            const uniquePendingIds = new Set(alertItems?.map(item => item.report_id) || [])
-            const pendingCountVal = uniquePendingIds.size
-
-            const { data: criticalItems } = await supabase
-                .from('report_items')
-                .select('report_id')
-                .eq('flag', 'CRITICAL')
-            const uniqueCriticalIds = new Set(criticalItems?.map(item => item.report_id) || [])
-            const criticalCountVal = uniqueCriticalIds.size
-
-            setStatsCounts({
-                totalPatients: totalPatientsCount || 0,
-                totalReports: totalReportsCount || 0,
-                pendingReports: pendingCountVal,
-                criticalReports: criticalCountVal
-            })
-
-            // 2. Fetch paginated patients matching search query (10 per page)
-            let pQuery = supabase
-                .from('patients')
-                .select('*, reports(count)', { count: 'exact' })
-
-            if (patientsSearch.trim()) {
-                pQuery = pQuery.or(`name.ilike.%${patientsSearch}%,email.ilike.%${patientsSearch}%,phone.ilike.%${patientsSearch}%`)
-            }
-
-            pQuery = pQuery.order('created_at', { ascending: false })
-
-            const pFrom = (patientsPage - 1) * 10
-            const pTo = pFrom + 10 - 1
-
-            const { data: dbPatients, count: pCount, error: pError } = await pQuery.range(pFrom, pTo)
-
-            if (pError) throw pError
-
-            setPatientsTotal(pCount || 0)
-            const mappedPatients: Patient[] = (dbPatients || []).map((p: Record<string, unknown>) => ({
-                id: p.id as string,
-                name: p.name as string,
-                email: (p.email as string) || '',
-                age: (p.age as number) || 30,
-                gender: (p.gender as string) || 'Not specified',
-                bloodGroup: (p.blood_group as string) || 'O+',
-                avatar: (p.avatar_url as string) || `https://avatar.vercel.sh/${p.name}`,
-                phone: (p.phone as string) || '',
-                reportsCount: (p.reports as any)?.[0]?.count || 0
-            }))
-            setPatients(mappedPatients)
-
-            // 3. Fetch paginated reports (10 per page)
-            const rFrom = (reportsPage - 1) * 10
-            const rTo = rFrom + 10 - 1
-
-            const { data: dbReports, count: rCount, error: rError } = await supabase
-                .from('reports')
-                .select(`
-                    *,
-                    patients (
-                        name
-                    ),
-                    report_items (
-                        *
-                    )
-                `, { count: 'exact' })
-                .order('created_at', { ascending: false })
-                .range(rFrom, rTo)
-
-            if (rError) throw rError
-
-            setReportsTotal(rCount || 0)
-            const mappedReports: Report[] = (dbReports || []).map(r => {
-                const items: ReportItem[] = (r.report_items || []).map((i: { id: string; test_name: string; result_value: string; unit: string; normal_range: string; flag: string }) => ({
-                    id: i.id,
-                    name: i.test_name,
-                    result: parseFloat(i.result_value) || 0,
-                    unit: i.unit || '',
-                    minNormal: parseFloat(i.normal_range?.split('-')[0]) || 0,
-                    maxNormal: parseFloat(i.normal_range?.split('-')[1]) || 0,
-                    status: (i.flag || 'NORMAL') as 'NORMAL' | 'BORDERLINE' | 'HIGH' | 'LOW' | 'CRITICAL'
-                }))
-
-                const isAlert = items.some(item => ['HIGH', 'LOW', 'CRITICAL'].includes(item.status))
-                const criticalNotes = items
-                    .filter(item => ['CRITICAL', 'HIGH'].includes(item.status))
-                    .map(item => `elevated ${item.name}`)
-                    .join(' and ')
-
-                return {
-                    id: r.id,
-                    labRef: r.report_no || 'L-UNKNOWN',
-                    patientId: r.patient_id,
-                    patientName: r.patients?.name || 'Unknown Patient',
-                    date: new Date(r.published_at || r.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-                    title: r.status === 'published' ? (items.length > 3 ? 'Comprehensive Blood Panel' : 'Lipid Profile & Glucose') : 'Pending Blood Chemistry',
-                    referrer: 'Dr. Sarah Miller',
-                    patientAlertRequired: isAlert,
-                    alertText: isAlert
-                        ? `Attention Required: Values parsed indicate immediate consultation range regarding ${criticalNotes || 'blood densities'}.`
-                        : undefined,
-                    doctorRemarks: r.notes || (isAlert
-                        ? `The patient shows elevated thresholds for ${criticalNotes}. Advised immediate follow-up.`
-                        : `Patient metrics demonstrate excellent overall physiological wellness.`),
-                    labNote: 'Processed via Supabase database client.',
-                    items,
-                    pdf_url: r.pdf_url || undefined
-                }
-            })
-            setReports(mappedReports)
-        } catch (err) {
-            console.error('Error fetching dashboard data:', err)
-        } finally {
-            setIsLoadingData(false)
+    // SWR setup for client-side caching & revalidation
+    const { data, error, mutate, isLoading } = useSWR<DashboardData>(
+        ['dashboard-data', patientsPage, patientsSearch, reportsPage],
+        dashboardFetcher,
+        {
+            fallbackData: {
+                patients: initialPatients,
+                patientsTotal: initialPatientsTotal,
+                reports: initialReports,
+                reportsTotal: initialReportsTotal,
+                statsCounts: initialStats
+            },
+            revalidateOnFocus: false,
+            dedupingInterval: 30000 // 30s cache
         }
-    }, [patientsPage, patientsSearch, reportsPage])
+    )
 
-    useEffect(() => {
-        // Skip first load if we are using initial values, otherwise fetch data
-        // Here we just let it sync to ensure fresh data.
-        const load = async () => {
-            await fetchDashboardData()
-        }
-        load()
-    }, [fetchDashboardData])
+    const patients = data?.patients || []
+    const patientsTotal = data?.patientsTotal || 0
+    const reports = data?.reports || []
+    const reportsTotal = data?.reportsTotal || 0
+    const statsCounts = data?.statsCounts || initialStats
+
+    const isLoadingData = isLoading && !data
 
     // Handler to save manual report entry
     const handleAddReportCommit = async (newReport: Report) => {
@@ -244,8 +262,8 @@ export default function DashboardClient({
             setTimeout(() => setAlertMessage(""), 4000)
             setIsAddReportOpen(false)
             
-            // Reload database state
-            await fetchDashboardData()
+            // Reload cached database state
+            mutate()
 
             // Auto navigate to the newly added report
             setSelectedReportId(reportData.id)
@@ -261,7 +279,7 @@ export default function DashboardClient({
     // Handler to add patient locally
     const handleAddPatientLocal = async (newPatient: Patient) => {
         try {
-            await fetchDashboardData()
+            mutate()
         } catch (err) {
             console.error('Error reloading data after patient register:', err)
         }
@@ -270,7 +288,7 @@ export default function DashboardClient({
     // Handler for editing patient — reload dashboard data
     const handleEditPatient = async (updatedPatient: Patient) => {
         try {
-            await fetchDashboardData()
+            mutate()
             setAlertMessage(`Successfully updated patient: ${updatedPatient.name}`)
             setTimeout(() => setAlertMessage(""), 4000)
         } catch (err) {
@@ -281,7 +299,7 @@ export default function DashboardClient({
     // Handler for deleting patient — reload dashboard data
     const handleDeletePatient = async (patientId: string) => {
         try {
-            await fetchDashboardData()
+            mutate()
             setAlertMessage('Patient record removed successfully.')
             setTimeout(() => setAlertMessage(""), 4000)
         } catch (err) {

@@ -14,132 +14,140 @@ import {
 import { ViewState, DashboardSideTab, Report, ReportItem } from '@/types'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
+import useSWR from 'swr'
+
+interface PatientDashboardData {
+  currentUserProfile: {
+    name: string;
+    patientId: string;
+    avatar: string;
+    email: string;
+  };
+  reports: Report[];
+}
+
+const patientDashboardFetcher = async (): Promise<PatientDashboardData> => {
+  const supabase = createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    throw new Error('Not authenticated')
+  }
+
+  // Fetch patient clinical details linked to this auth user
+  let patientData = null
+  const { data: pData, error: pError } = await supabase
+      .from('patients')
+      .select('*')
+      .eq('profile_id', user.id)
+      .maybeSingle()
+
+  if (pData) {
+      patientData = pData
+  } else {
+      // Try by email
+      const { data: pDataByEmail } = await supabase
+          .from('patients')
+          .select('*')
+          .eq('email', user.email)
+          .maybeSingle()
+      
+      if (pDataByEmail) {
+          patientData = pDataByEmail
+      }
+  }
+
+  if (!patientData) {
+      throw new Error(`No patient record found in database for auth user: ${user.email}`)
+  }
+
+  const currentUserProfile = {
+      name: patientData.name,
+      patientId: `P-${patientData.id.slice(0, 6).toUpperCase()}`,
+      avatar: patientData.avatar_url || `https://avatar.vercel.sh/${patientData.name}`,
+      email: patientData.email || ''
+  }
+
+  // Fetch reports for this patient
+  const { data: dbReports, error: reportsError } = await supabase
+      .from('reports')
+      .select(`
+          *,
+          report_items (
+              *
+          )
+      `)
+      .eq('patient_id', patientData.id)
+      .order('created_at', { ascending: false })
+
+  if (reportsError) throw reportsError
+
+  const mappedReports: Report[] = (dbReports || []).map(r => {
+      const items: ReportItem[] = (r.report_items || []).map((i: any) => ({
+          id: i.id,
+          name: i.test_name,
+          result: parseFloat(i.result_value) || 0,
+          unit: i.unit || '',
+          minNormal: parseFloat(i.normal_range?.split('-')[0]) || 0,
+          maxNormal: parseFloat(i.normal_range?.split('-')[1]) || 0,
+          status: (i.flag || 'NORMAL') as 'NORMAL' | 'BORDERLINE' | 'HIGH' | 'LOW' | 'CRITICAL'
+      }))
+
+      const isAlert = items.some(item => ['HIGH', 'LOW', 'CRITICAL'].includes(item.status))
+      const criticalNotes = items
+          .filter(item => ['CRITICAL', 'HIGH'].includes(item.status))
+          .map(item => `elevated ${item.name}`)
+          .join(' and ')
+
+      return {
+          id: r.id,
+          labRef: r.report_no || 'L-UNKNOWN',
+          patientId: r.patient_id,
+          patientName: patientData.name,
+          date: new Date(r.published_at || r.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+          title: r.status === 'published' ? (items.length > 3 ? 'Comprehensive Blood Panel' : 'Lipid Profile & Glucose') : 'Pending Blood Chemistry',
+          referrer: 'Dr. Sarah Miller',
+          patientAlertRequired: isAlert,
+          alertText: isAlert
+              ? `Attention Required: Values parsed indicate immediate consultation range regarding ${criticalNotes || 'blood densities'}.`
+              : undefined,
+          doctorRemarks: r.notes || (isAlert
+              ? `The patient shows elevated thresholds for ${criticalNotes}. Advised immediate follow-up.`
+              : `Patient metrics demonstrate excellent overall physiological wellness.`),
+          labNote: 'Processed via Supabase database client.',
+          items,
+          pdf_url: r.pdf_url || undefined
+      }
+  })
+
+  return {
+      currentUserProfile,
+      reports: mappedReports
+  }
+}
 
 export default function PatientDashboardPage() {
     const [activeTab, setActiveTab] = useState<DashboardSideTab>('Dashboard')
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
     const [selectedReportId, setSelectedReportId] = useState<string | null>(null)
-    
-    const [reports, setReports] = useState<Report[]>([])
-    const [currentUserProfile, setCurrentUserProfile] = useState<{
-        name: string;
-        patientId: string;
-        avatar: string;
-        email: string;
-    } | null>(null)
-    const [isLoadingData, setIsLoadingData] = useState(true)
 
-    const fetchPatientData = useCallback(async () => {
-        try {
-            const supabase = createClient()
-            const { data: { user }, error: authError } = await supabase.auth.getUser()
-            if (authError || !user) {
-                window.location.href = '/patient/login'
-                return
-            }
-
-            // Fetch patient clinical details linked to this auth user
-            let patientData = null
-            const { data: pData, error: pError } = await supabase
-                .from('patients')
-                .select('*')
-                .eq('profile_id', user.id)
-                .maybeSingle()
-
-            if (pData) {
-                patientData = pData
-            } else {
-                // Try by email
-                const { data: pDataByEmail } = await supabase
-                    .from('patients')
-                    .select('*')
-                    .eq('email', user.email)
-                    .maybeSingle()
-                
-                if (pDataByEmail) {
-                    patientData = pDataByEmail
+    // SWR setup for client-side caching & revalidation
+    const { data, error, isLoading } = useSWR<PatientDashboardData>(
+        'patient-dashboard-data',
+        patientDashboardFetcher,
+        {
+            revalidateOnFocus: false,
+            dedupingInterval: 30000,
+            onError: (err) => {
+                if (err.message === 'Not authenticated') {
+                    window.location.href = '/patient/login'
                 }
             }
-
-            if (!patientData) {
-                console.error('No patient record found in database for auth user:', user.email)
-                setIsLoadingData(false)
-                return
-            }
-
-            setCurrentUserProfile({
-                name: patientData.name,
-                patientId: `P-${patientData.id.slice(0, 6).toUpperCase()}`,
-                avatar: patientData.avatar_url || `https://avatar.vercel.sh/${patientData.name}`,
-                email: patientData.email || ''
-            })
-
-            // Fetch reports for this patient
-            const { data: dbReports, error: reportsError } = await supabase
-                .from('reports')
-                .select(`
-                    *,
-                    report_items (
-                        *
-                    )
-                `)
-                .eq('patient_id', patientData.id)
-                .order('created_at', { ascending: false })
-
-            if (reportsError) throw reportsError
-
-            const mappedReports: Report[] = (dbReports || []).map(r => {
-                const items: ReportItem[] = (r.report_items || []).map((i: { id: string; test_name: string; result_value: string; unit: string; normal_range: string; flag: string }) => ({
-                    id: i.id,
-                    name: i.test_name,
-                    result: parseFloat(i.result_value) || 0,
-                    unit: i.unit || '',
-                    minNormal: parseFloat(i.normal_range?.split('-')[0]) || 0,
-                    maxNormal: parseFloat(i.normal_range?.split('-')[1]) || 0,
-                    status: (i.flag || 'NORMAL') as 'NORMAL' | 'BORDERLINE' | 'HIGH' | 'LOW' | 'CRITICAL'
-                }))
-
-                const isAlert = items.some(item => ['HIGH', 'LOW', 'CRITICAL'].includes(item.status))
-                const criticalNotes = items
-                    .filter(item => ['CRITICAL', 'HIGH'].includes(item.status))
-                    .map(item => `elevated ${item.name}`)
-                    .join(' and ')
-
-                return {
-                    id: r.id,
-                    labRef: r.report_no || 'L-UNKNOWN',
-                    patientId: r.patient_id,
-                    patientName: patientData.name,
-                    date: new Date(r.published_at || r.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-                    title: r.status === 'published' ? (items.length > 3 ? 'Comprehensive Blood Panel' : 'Lipid Profile & Glucose') : 'Pending Blood Chemistry',
-                    referrer: 'Dr. Sarah Miller',
-                    patientAlertRequired: isAlert,
-                    alertText: isAlert
-                        ? `Attention Required: Values parsed indicate immediate consultation range regarding ${criticalNotes || 'blood densities'}.`
-                        : undefined,
-                    doctorRemarks: r.notes || (isAlert
-                        ? `The patient shows elevated thresholds for ${criticalNotes}. Advised immediate follow-up.`
-                        : `Patient metrics demonstrate excellent overall physiological wellness.`),
-                    labNote: 'Processed via Supabase database client.',
-                    items,
-                    pdf_url: r.pdf_url || undefined
-                }
-            })
-
-            setReports(mappedReports)
-        } catch (err) {
-            console.error('Error fetching patient dashboard records:', err)
-        } finally {
-            setIsLoadingData(false)
         }
-    }, [])
+    )
 
-    useEffect(() => {
-        const load = async () => {
-            await fetchPatientData()
-        }
-        load()
-    }, [fetchPatientData])
+    const reports = data?.reports || []
+    const currentUserProfile = data?.currentUserProfile || null
+    const isLoadingData = isLoading && !data && !error
 
     const currentSelectedReport = reports.find(r => r.id === selectedReportId)
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { Loader2, Mail, Lock, Shield, ArrowLeft, Terminal, CheckCircle2, FlaskConical, Cpu } from "lucide-react"
 import Link from "next/link"
 

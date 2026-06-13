@@ -6,7 +6,7 @@ import AdminDashboard from '../component/AdminDashboard'
 import AddReport from '../component/AddReport'
 import PatientsPanel from '@/app/patient/component/PatientsPanel'
 import ReportDetails from '@/app/patient/component/ReportDetails'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'motion/react'
 import { 
     Activity, 
     Bell,

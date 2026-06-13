@@ -40,8 +40,8 @@ interface LandingPageProps {
 }
 
 export default function LandingPage({
-    onNavigate = () => {},
-    onOpenAuth = () => {},
+    onNavigate = () => { },
+    onOpenAuth = () => { },
     isLoggedIn = false,
     currentUserProfile = {
         name: '',
@@ -50,10 +50,9 @@ export default function LandingPage({
         email: ''
     },
     currentUserRole = 'patient',
-    onLogout = () => {}
+    onLogout = () => { }
 }: LandingPageProps = {}) {
     const [activeTab, setActiveTab] = useState<'Home' | 'Features' | 'How it Works'>('Home');
-    const [showLoginMenu, setShowLoginMenu] = useState(false);
 
     const stats = [
         { value: '2.4M', label: 'REPORTS DELIVERED' },

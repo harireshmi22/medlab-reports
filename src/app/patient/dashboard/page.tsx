@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import Sidebar from '../component/Sidebar'
 import PatientDashboard from '../component/PatientDashboard'
 import ReportDetails from '../component/ReportDetails'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'motion/react'
 import {
     Activity,
     Bell,

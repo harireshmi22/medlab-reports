@@ -26,36 +26,40 @@ export default function AdminDashboard({ onNavigateToReport, reports, patients }
 
   const criticalReportsCount = reports.filter(r => r.items.some(item => item.status === 'CRITICAL')).length;
 
-  // Exact metrics parameters matching screen C mockup
+  // Derive all stats from actual data — no hardcoded fallbacks
+  const totalPatients = patients?.length || 0;
+  const totalReports = reports.length;
+  const pendingReports = reports.filter(r => r.patientAlertRequired).length;
+
   const stats = [
     {
       title: 'Total Patients',
-      value: patients && patients.length > 0 ? patients.length.toString() : '1,240',
-      label: patients && patients.length > 0 ? 'Active database profiles' : '12% from last month',
+      value: totalPatients.toLocaleString(),
+      label: `${totalPatients} active database profiles`,
       icon: <Users className="w-5 h-5 text-[#004e9f]" />,
       colorClass: 'text-emerald-700 bg-emerald-50 border-emerald-100',
       isUp: true
     },
     {
       title: 'Reports Uploaded',
-      value: reports.length > 0 ? reports.length.toString() : '3,450',
-      label: reports.length > 0 ? 'Dynamic uploaded count' : '98% completion rate',
+      value: totalReports.toLocaleString(),
+      label: `${totalReports} total reports in system`,
       icon: <CheckCircle className="w-5 h-5 text-teal-600" />,
       colorClass: 'text-emerald-700 bg-emerald-50 border-emerald-100',
       isUp: true
     },
     {
       title: 'Pending Reports',
-      value: '12',
-      label: 'Avg. 4h wait time',
+      value: pendingReports.toString(),
+      label: pendingReports > 0 ? `${pendingReports} reports need attention` : 'No pending reports',
       icon: <Clock className="w-5 h-5 text-gray-500" />,
       colorClass: 'text-gray-500 bg-slate-50 border-gray-100',
       isUp: false
     },
     {
       title: 'Critical Reports',
-      value: reports.length > 0 ? criticalReportsCount.toString() : '5',
-      label: reports.length > 0 ? 'Immediate action tagged' : 'Immediate action required',
+      value: criticalReportsCount.toString(),
+      label: criticalReportsCount > 0 ? `${criticalReportsCount} require immediate action` : 'No critical reports',
       icon: <AlertTriangle className="w-5 h-5 text-rose-600" />,
       colorClass: 'text-rose-700 bg-rose-50 border-rose-100',
       isUp: false,
@@ -98,7 +102,7 @@ export default function AdminDashboard({ onNavigateToReport, reports, patients }
 
         <div className="flex items-center gap-1.5 text-xs text-gray-500 font-bold bg-white border border-[#c1c6d5]/40 shadow-sm px-4 py-2 rounded-xl">
           <Calendar className="w-4 h-4 text-gray-400" />
-          <span>Today: Oct 24, 2026</span>
+          <span>Today: {new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</span>
         </div>
       </div>
 

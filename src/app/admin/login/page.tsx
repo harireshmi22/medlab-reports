@@ -46,11 +46,6 @@ export default function AdminLogin() {
         setIsError(false)
     }
 
-    const handleQuickFill = () => {
-        setFormData({ email: "admin@medlabs.com", password: "admin123" })
-        setMessage("")
-        setIsError(false)
-    }
 
     return (
         <div className="min-h-screen w-full flex bg-slate-50 font-sans">
@@ -235,21 +230,6 @@ export default function AdminLogin() {
                                 )}
                             </button>
                         </form>
-                    </div>
-
-                    {/* Quick Test Login Badge */}
-                    <div className="bg-slate-50/80 border-t border-slate-200/80 p-5 text-center">
-                        <div className="flex flex-col items-center gap-2">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">LIS Administrative Access</span>
-                            <button
-                                type="button"
-                                onClick={handleQuickFill}
-                                className="text-xs font-bold text-blue-600 hover:text-blue-800 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg px-4 py-2 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                            >
-                                <Shield className="w-3.5 h-3.5 text-blue-500 fill-blue-500/20" />
-                                Click to Autofill LIS Credentials
-                            </button>
-                        </div>
                     </div>
                 </motion.div>
             </div>

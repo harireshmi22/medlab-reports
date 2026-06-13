@@ -21,16 +21,22 @@ export default function PatientLogin() {
         setIsError(false)
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 1500))
+            const response = await fetch("/api/auth/patient/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            });
 
-            if (formData.email.trim().toLowerCase() === "patient@medlabs.com" && formData.password === "patient123") {
-                setMessage("Login successful! Entering your portal...")
-                localStorage.setItem("auth_token", "dummy_jwt_token_patient")
-                localStorage.setItem("user_role", "patient")
-                router.push("/patient/dashboard")
+            const data = await response.json();
+            if (data.success) {
+                localStorage.setItem("auth_token", data.token);
+                localStorage.setItem("user_role", "patient");
+                router.push("/patient/dashboard");
             } else {
-                setIsError(true)
-                setMessage("Invalid email or password. Use the quick-fill option below.")
+                setIsError(true);
+                setMessage(data.message || "Invalid email or password");
             }
         } catch (error) {
             setIsError(true)
@@ -46,11 +52,6 @@ export default function PatientLogin() {
         setIsError(false)
     }
 
-    const handleQuickFill = () => {
-        setFormData({ email: "patient@medlabs.com", password: "patient123" })
-        setMessage("")
-        setIsError(false)
-    }
 
     return (
         <div className="min-h-screen w-full flex bg-slate-50 font-sans">
@@ -62,7 +63,7 @@ export default function PatientLogin() {
                 <div className="absolute bottom-1/4 -right-20 w-80 h-80 rounded-full bg-teal-500/20 blur-3xl" />
 
                 {/* Top Brand Logo */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
@@ -96,7 +97,7 @@ export default function PatientLogin() {
                     </motion.div>
 
                     {/* Features list */}
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.7, delay: 0.2 }}
@@ -118,7 +119,7 @@ export default function PatientLogin() {
                 </div>
 
                 {/* Footer stats */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.3 }}
@@ -143,8 +144,8 @@ export default function PatientLogin() {
                 </div>
 
                 {/* Back Link */}
-                <Link 
-                    href="/" 
+                <Link
+                    href="/"
                     className="absolute top-6 right-6 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm cursor-pointer"
                 >
                     <ArrowLeft className="w-3.5 h-3.5" />
@@ -152,14 +153,14 @@ export default function PatientLogin() {
                 </Link>
 
                 {/* Login Form Wrapper */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                     className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden flex flex-col justify-between"
                 >
                     {/* Visual colored accent bar */}
-                    <div className="h-1.5 bg-gradient-to-r from-teal-500 to-[#004e9f]" />
+                    <div className="h-1.5 bg-linear-to-r from-teal-500 to-[#004e9f]" />
 
                     <div className="p-8">
                         {/* Title and subtitle */}
@@ -170,14 +171,13 @@ export default function PatientLogin() {
 
                         {/* Message / Status Panel */}
                         {message && (
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className={`mb-6 p-4 rounded-xl text-xs font-bold border transition-colors ${
-                                    isError 
-                                        ? 'bg-red-50 text-red-700 border-red-200' 
-                                        : 'bg-green-50 text-teal-800 border-green-200'
-                                }`}
+                                className={`mb-6 p-4 rounded-xl text-xs font-bold border transition-colors ${isError
+                                    ? 'bg-red-50 text-red-700 border-red-200'
+                                    : 'bg-green-50 text-teal-800 border-green-200'
+                                    }`}
                             >
                                 {message}
                             </motion.div>
@@ -235,21 +235,6 @@ export default function PatientLogin() {
                                 )}
                             </button>
                         </form>
-                    </div>
-
-                    {/* Quick Test Login Badge */}
-                    <div className="bg-slate-50/80 border-t border-slate-200/80 p-5 text-center">
-                        <div className="flex flex-col items-center gap-2">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Demo / Reviewer Access</span>
-                            <button
-                                type="button"
-                                onClick={handleQuickFill}
-                                className="text-xs font-bold text-[#004e9f] hover:text-blue-800 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg px-4 py-2 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                            >
-                                <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-                                Click to Autofill Credentials
-                            </button>
-                        </div>
                     </div>
                 </motion.div>
             </div>

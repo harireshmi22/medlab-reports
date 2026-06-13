@@ -95,22 +95,21 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
 
         const userId = authData.user.id;
 
-        // 2. Insert profile record into medlab_profiles using the admin's main client
-        const { error: profileError } = await supabase
-          .from('medlab_profiles')
+        // 2. Insert clinical record into patients table using the admin's main client
+        const { error: patientError } = await supabase
+          .from('patients')
           .insert([{
-            id: userId,
+            profile_id: userId,
             name: name.trim(),
             email: email.trim(),
-            role: 'patient',
             age: parseInt(age) || 35,
             gender,
             blood_group: bloodGroup,
             phone: phone.trim(),
-            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBpF2T5v2g6kd6FOwUZpDVw_rQ1JenZaS5YMSnK3ysw6YGVGDjkKKXv1oB7c5Nyjv_zMbi3SPfHK556YnStrCs8ZReV9Fp2hmsX8YYECMqcNMvIGXzo5NZPXafYeMOUkt_HRVHck93wT2ho-8QIEuO-lZcTuNk9jkcTG0w0Xfr6bAoEwxQDu2vpCze4ZkLi4zRp87pWoo7Gsjq1PYKOFp0R_7QCuEFAIj6pzeEZa85VRy67EhbsDGyYQO1FwvcdSvKtbCkEuYAzBA'
+            avatar_url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBpF2T5v2g6kd6FOwUZpDVw_rQ1JenZaS5YMSnK3ysw6YGVGDjkKKXv1oB7c5Nyjv_zMbi3SPfHK556YnStrCs8ZReV9Fp2hmsX8YYECMqcNMvIGXzo5NZPXafYeMOUkt_HRVHck93wT2ho-8QIEuO-lZcTuNk9jkcTG0w0Xfr6bAoEwxQDu2vpCze4ZkLi4zRp87pWoo7Gsjq1PYKOFp0R_7QCuEFAIj6pzeEZa85VRy67EhbsDGyYQO1FwvcdSvKtbCkEuYAzBA'
           }]);
 
-        if (profileError) throw profileError;
+        if (patientError) throw patientError;
 
         // 3. Callback to app layout state for local append
         onAddPatientLocal({

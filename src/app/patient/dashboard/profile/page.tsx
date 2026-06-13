@@ -1,5 +1,4 @@
-import React from 'react';
-
+import Report from "../../../patient/component/patient/Report";
 export default function PatientProfilePage() {
-  return <div>Patient Profile</div>;
+  return <Report />;
 }

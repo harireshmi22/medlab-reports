@@ -24,8 +24,6 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { Patient, Report } from '@/types';
-import { getSupabaseClient, getSupabaseConfig } from '@/lib/supabase';
-import { createClient } from '@supabase/supabase-js';
 
 interface PatientsPanelProps {
   patients: Patient[];

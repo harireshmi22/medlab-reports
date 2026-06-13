@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Parse request payload
-    const { name, email, password, age, gender, phone } = await request.json();
+    const { name, email, password, age, gender, phone, bloodGroup } = await request.json();
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: 'Name, email, and password are required fields.' }, { status: 400 });
@@ -72,23 +72,47 @@ export async function POST(request: Request) {
 
     // 4. Insert clinical record into patients table using the admin client
     // Note: patients table schema contains: id, profile_id, name, age, gender, phone, email, address, created_at.
-    // It does NOT have avatar_url or blood_group columns.
-    const { data: patientData, error: patientError } = await adminClient
+    // blood_group and avatar_url columns may not exist — handle gracefully.
+    const insertPayload: Record<string, unknown> = {
+      profile_id: newUserId,
+      name: name.trim(),
+      email: email.trim(),
+      age: parseInt(age) || 30,
+      gender,
+      phone: phone?.trim() || ''
+    };
+
+    // Try inserting with blood_group first; if column doesn't exist, retry without it
+    let patientData: Record<string, unknown> | null = null;
+    let patientError: { message: string } | null = null;
+
+    const { data: d1, error: e1 } = await adminClient
       .from('patients')
-      .insert({
-        profile_id: newUserId,
-        name: name.trim(),
-        email: email.trim(),
-        age: parseInt(age) || 30,
-        gender,
-        phone: phone?.trim() || ''
-      })
+      .insert({ ...insertPayload, blood_group: bloodGroup || 'O+' })
       .select()
       .single();
+
+    if (e1 && e1.message?.includes('blood_group')) {
+      // Column doesn't exist — retry without blood_group
+      const { data: d2, error: e2 } = await adminClient
+        .from('patients')
+        .insert(insertPayload)
+        .select()
+        .single();
+      patientData = d2;
+      patientError = e2;
+    } else {
+      patientData = d1;
+      patientError = e1;
+    }
 
     if (patientError) {
       console.error('Database insertion error for patient:', patientError);
       return NextResponse.json({ error: patientError.message }, { status: 500 });
+    }
+
+    if (!patientData) {
+      return NextResponse.json({ error: 'Failed to create patient record.' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -100,9 +124,9 @@ export async function POST(request: Request) {
         email: patientData.email,
         age: patientData.age,
         gender: patientData.gender,
-        bloodGroup: 'O+', // default fallback for UI
+        bloodGroup: (patientData.blood_group as string) || bloodGroup || 'O+',
         phone: patientData.phone,
-        avatar: `https://avatar.vercel.sh/${encodeURIComponent(patientData.name)}`
+        avatar: `https://avatar.vercel.sh/${encodeURIComponent(patientData.name as string)}`
       }
     });
 

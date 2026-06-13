@@ -43,15 +43,15 @@ export default function AdminDashboardPage() {
 
             if (pError) throw pError
 
-            const mappedPatients: Patient[] = (dbPatients || []).map(p => ({
-                id: p.id,
-                name: p.name,
-                email: p.email || '',
-                age: p.age || 30,
-                gender: p.gender || 'Not specified',
-                bloodGroup: p.blood_group || 'O+',
-                avatar: p.avatar_url || `https://avatar.vercel.sh/${p.name}`,
-                phone: p.phone || ''
+            const mappedPatients: Patient[] = (dbPatients || []).map((p: Record<string, unknown>) => ({
+                id: p.id as string,
+                name: p.name as string,
+                email: (p.email as string) || '',
+                age: (p.age as number) || 30,
+                gender: (p.gender as string) || 'Not specified',
+                bloodGroup: (p.blood_group as string) || 'O+',
+                avatar: (p.avatar_url as string) || `https://avatar.vercel.sh/${p.name}`,
+                phone: (p.phone as string) || ''
             }))
             setPatients(mappedPatients)
 
@@ -187,6 +187,28 @@ export default function AdminDashboardPage() {
         }
     }
 
+    // Handler for editing patient — reload dashboard data
+    const handleEditPatient = async (updatedPatient: Patient) => {
+        try {
+            await fetchDashboardData()
+            setAlertMessage(`Successfully updated patient: ${updatedPatient.name}`)
+            setTimeout(() => setAlertMessage(""), 4000)
+        } catch (err) {
+            console.error('Error reloading data after patient edit:', err)
+        }
+    }
+
+    // Handler for deleting patient — reload dashboard data
+    const handleDeletePatient = async (patientId: string) => {
+        try {
+            await fetchDashboardData()
+            setAlertMessage('Patient record removed successfully.')
+            setTimeout(() => setAlertMessage(""), 4000)
+        } catch (err) {
+            console.error('Error reloading data after patient delete:', err)
+        }
+    }
+
 
 
     const currentSelectedReport = reports.find(r => r.id === selectedReportId)
@@ -306,6 +328,8 @@ export default function AdminDashboardPage() {
                                     patients={patients}
                                     reports={reports}
                                     onAddPatientLocal={handleAddPatientLocal}
+                                    onEditPatient={handleEditPatient}
+                                    onDeletePatient={handleDeletePatient}
                                     onNavigateToReport={(repId) => {
                                         setSelectedReportId(repId)
                                         setActiveTab('Reports')

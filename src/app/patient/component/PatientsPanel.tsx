@@ -378,10 +378,13 @@ export default function PatientsPanel({
                       }`}
                   >
                     <div className="flex items-start gap-3.5">
-                      <img
+                      <Image
                         alt={patient.name}
                         src={patient.avatar}
+                        width={44}
+                        height={44}
                         className="w-11 h-11 rounded-xl object-cover border-2 border-slate-100 shadow-sm shrink-0"
+                        loading="lazy"
                       />
                       <div className="overflow-hidden flex-1 min-w-0">
                         <h4 className="font-bold text-sm text-slate-900 truncate">{patient.name}</h4>
@@ -462,10 +465,13 @@ export default function PatientsPanel({
               {/* Header with patient avatar */}
               <div className="flex justify-between items-start border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-3.5">
-                  <img
+                  <Image
                     alt={selectedPatient.name}
                     src={selectedPatient.avatar}
+                    width={56}
+                    height={56}
                     className="w-14 h-14 rounded-2xl object-cover border-2 border-slate-100 shadow-md"
+                    loading="lazy"
                   />
                   <div>
                     <h3 className="font-extrabold text-base text-slate-900">{selectedPatient.name}</h3>

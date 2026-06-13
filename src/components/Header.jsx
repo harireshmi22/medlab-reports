@@ -60,12 +60,13 @@ const Header = ({
                                     onClick={() => setShowLoginMenu(!showLoginMenu)}
                                     className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-100 hover:border-[#004e9f] transition-all flex items-center justify-center cursor-pointer shadow-sm"
                                 >
-                                    <img
+                                    <Image
                                         src={currentUserProfile.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBpF2T5v2g6kd6FOwUZpDVw_rQ1JenZaS5YMSnK3ysw6YGVGDjkKKXv1oB7c5Nyjv_zMbi3SPfHK556YnStrCs8ZReV9Fp2hmsX8YYECMqcNMvIGXzo5NZPXafYeMOUkt_HRVHck93wT2ho-8QIEuO-lZcTuNk9jkcTG0w0Xfr6bAoEwxQDu2vpCze4ZkLi4zRp87pWoo7Gsjq1PYKOFp0R_7QCuEFAIj6pzeEZa85VRy67EhbsDGyYQO1FwvcdSvKtbCkEuYAzBA'}
                                         alt="User avatar"
                                         className="w-full h-full object-cover"
-                                        width={100}
-                                        height={100}
+                                        width={40}
+                                        height={40}
+                                        priority
                                     />
                                 </button>
 

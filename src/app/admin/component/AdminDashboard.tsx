@@ -20,16 +20,27 @@ interface AdminDashboardProps {
   onNavigateToReport: (reportId: string) => void;
   reports: Report[];
   patients?: Patient[];
+  totalPatientsCount?: number;
+  totalReportsCount?: number;
+  pendingReportsCount?: number;
+  criticalReportsCount?: number;
 }
 
-export default function AdminDashboard({ onNavigateToReport, reports, patients }: AdminDashboardProps) {
+export default function AdminDashboard({ 
+  onNavigateToReport, 
+  reports, 
+  patients,
+  totalPatientsCount,
+  totalReportsCount,
+  pendingReportsCount,
+  criticalReportsCount
+}: AdminDashboardProps) {
 
-  const criticalReportsCount = reports.filter(r => r.items.some(item => item.status === 'CRITICAL')).length;
-
-  // Derive all stats from actual data — no hardcoded fallbacks
-  const totalPatients = patients?.length || 0;
-  const totalReports = reports.length;
-  const pendingReports = reports.filter(r => r.patientAlertRequired).length;
+  // Derive stats, using passed count props (from server count endpoints) or falling back to current local array lengths
+  const totalPatients = totalPatientsCount !== undefined ? totalPatientsCount : (patients?.length || 0);
+  const totalReports = totalReportsCount !== undefined ? totalReportsCount : reports.length;
+  const pendingReports = pendingReportsCount !== undefined ? pendingReportsCount : reports.filter(r => r.patientAlertRequired).length;
+  const criticalReports = criticalReportsCount !== undefined ? criticalReportsCount : reports.filter(r => r.items.some(item => item.status === 'CRITICAL')).length;
 
   const stats = [
     {
@@ -58,8 +69,8 @@ export default function AdminDashboard({ onNavigateToReport, reports, patients }
     },
     {
       title: 'Critical Reports',
-      value: criticalReportsCount.toString(),
-      label: criticalReportsCount > 0 ? `${criticalReportsCount} require immediate action` : 'No critical reports',
+      value: criticalReports.toString(),
+      label: criticalReports > 0 ? `${criticalReports} require immediate action` : 'No critical reports',
       icon: <AlertTriangle className="w-5 h-5 text-rose-600" />,
       colorClass: 'text-rose-700 bg-rose-50 border-rose-100',
       isUp: false,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     X,
@@ -39,6 +39,7 @@ export default function AddReportModal({ onClose, onAddReport, patients }: AddRe
     const [uploadedFileUrl, setUploadedFileUrl] = useState<string>('');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
@@ -113,6 +114,11 @@ export default function AddReportModal({ onClose, onAddReport, patients }: AddRe
     ];
 
     const handleFileSelected = async (fileObj: File | string) => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+
         const fileName = typeof fileObj === 'string' ? fileObj : fileObj.name;
         setUploadFileName(fileName);
         setScanningStatus('scanning');
@@ -121,10 +127,13 @@ export default function AddReportModal({ onClose, onAddReport, patients }: AddRe
 
         if (typeof fileObj === 'string') {
             // Preset simulated selection
-            const interval = setInterval(() => {
+            intervalRef.current = setInterval(() => {
                 setScanProgress((prev) => {
                     if (prev >= 100) {
-                        clearInterval(interval);
+                        if (intervalRef.current) {
+                            clearInterval(intervalRef.current);
+                            intervalRef.current = null;
+                        }
                         setScanningStatus('complete');
                         const matchedSample = samples.find(s => fileName.includes(s.name.split('_')[0])) || samples[0];
                         setParsedTitle(matchedSample.title);
@@ -137,10 +146,13 @@ export default function AddReportModal({ onClose, onAddReport, patients }: AddRe
             }, 100);
         } else {
             // Real File upload and server-side text extraction!
-            const progressInterval = setInterval(() => {
+            intervalRef.current = setInterval(() => {
                 setScanProgress((prev) => {
                     if (prev >= 90) {
-                        clearInterval(progressInterval);
+                        if (intervalRef.current) {
+                            clearInterval(intervalRef.current);
+                            intervalRef.current = null;
+                        }
                         return 90;
                     }
                     return prev + Math.floor(Math.random() * 15) + 5;
@@ -157,7 +169,10 @@ export default function AddReportModal({ onClose, onAddReport, patients }: AddRe
                 });
 
                 const data = await response.json();
-                clearInterval(progressInterval);
+                if (intervalRef.current) {
+                    clearInterval(intervalRef.current);
+                    intervalRef.current = null;
+                }
                 setScanProgress(100);
 
                 if (data.success) {
@@ -183,7 +198,10 @@ export default function AddReportModal({ onClose, onAddReport, patients }: AddRe
                 }
             } catch (err) {
                 console.error('Failed to parse PDF:', err);
-                clearInterval(progressInterval);
+                if (intervalRef.current) {
+                    clearInterval(intervalRef.current);
+                    intervalRef.current = null;
+                }
                 setScanProgress(100);
                 setScanningStatus('complete');
                 const matchedSample = samples.find(s => fileName.includes(s.name.split('_')[0])) || samples[0];
@@ -193,6 +211,14 @@ export default function AddReportModal({ onClose, onAddReport, patients }: AddRe
             }
         }
     };
+
+    useEffect(() => {
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+            }
+        };
+    }, []);
     const loadSamplePreset = (idx: number) => {
         const sample = samples[idx];
         handleFileSelected(sample.name);
@@ -288,8 +314,8 @@ export default function AddReportModal({ onClose, onAddReport, patients }: AddRe
                                 onDrop={handleDrop}
                                 onClick={() => fileInputRef.current?.click()}
                                 className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${dragActive
-                                        ? 'border-[#004e9f] bg-blue-50/40 scale-[0.99]'
-                                        : 'border-slate-300 bg-slate-50 hover:bg-slate-100/50 hover:border-slate-400'
+                                    ? 'border-[#004e9f] bg-blue-50/40 scale-[0.99]'
+                                    : 'border-slate-300 bg-slate-50 hover:bg-slate-100/50 hover:border-slate-400'
                                     }`}
                             >
                                 <input
@@ -429,10 +455,10 @@ export default function AddReportModal({ onClose, onAddReport, patients }: AddRe
                                                         <td className="px-4 py-2.5 text-slate-500">{item.minNormal} - {item.maxNormal}</td>
                                                         <td className="px-4 py-2.5">
                                                             <span className={`px-2 py-0.5 rounded-full inline-block text-[9px] font-bold ${item.status === 'NORMAL'
-                                                                    ? 'bg-emerald-100 text-emerald-800'
-                                                                    : item.status === 'BORDERLINE'
-                                                                        ? 'bg-amber-100 text-amber-800'
-                                                                        : 'bg-rose-100 text-rose-800'
+                                                                ? 'bg-emerald-100 text-emerald-800'
+                                                                : item.status === 'BORDERLINE'
+                                                                    ? 'bg-amber-100 text-amber-800'
+                                                                    : 'bg-rose-100 text-rose-800'
                                                                 }`}>
                                                                 {item.status}
                                                             </span>

@@ -7,6 +7,7 @@ export interface Patient {
   bloodGroup: string;
   avatar: string;
   phone: string;
+  reportsCount?: number;
 }
 
 export interface ReportItem {

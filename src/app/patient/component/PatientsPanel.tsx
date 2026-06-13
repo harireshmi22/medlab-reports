@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Users, 
-  Search, 
-  UserPlus, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  Heart, 
-  X, 
-  Loader2, 
-  CheckCircle2, 
+import {
+  Users,
+  Search,
+  UserPlus,
+  Mail,
+  Phone,
+  Calendar,
+  Heart,
+  X,
+  Loader2,
+  CheckCircle2,
   AlertCircle,
   FlaskConical,
   Activity,
@@ -33,10 +34,30 @@ interface PatientsPanelProps {
   onNavigateToReport: (reportId: string) => void;
   onEditPatient?: (updatedPatient: Patient) => void;
   onDeletePatient?: (patientId: string) => void;
+
+  // Pagination & Search extensions
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  currentPage: number;
+  onPageChange: (page: number) => void;
+  totalPatientsCount: number;
+  pageSize: number;
 }
 
-export default function PatientsPanel({ patients, reports, onAddPatientLocal, onNavigateToReport, onEditPatient, onDeletePatient }: PatientsPanelProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+export default function PatientsPanel({
+  patients,
+  reports,
+  onAddPatientLocal,
+  onNavigateToReport,
+  onEditPatient,
+  onDeletePatient,
+  searchTerm,
+  onSearchChange,
+  currentPage,
+  onPageChange,
+  totalPatientsCount,
+  pageSize
+}: PatientsPanelProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -52,7 +73,12 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
   const [phone, setPhone] = useState('');
 
   // Selected patient details view state
-  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const selectedPatientId = selectedPatient?.id || null;
+
+  // Selected patient reports fetched from server
+  const [selectedPatientReports, setSelectedPatientReports] = useState<Report[]>([]);
+  const [loadingPatientReports, setLoadingPatientReports] = useState(false);
 
   // Edit patient modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -73,16 +99,58 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
   const [deletePatientId, setDeletePatientId] = useState<string>('');
   const [deletePatientName, setDeletePatientName] = useState<string>('');
 
-  // Filter patients by search term
-  const filteredPatients = patients.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.phone && p.phone.includes(searchTerm))
-  );
+  // Filter patients by search term - now mapped directly to the paginated/filtered patients from server
+  const filteredPatients = patients;
 
-  const getPatientReports = (patientId: string) => {
-    return reports.filter(r => r.patientId === patientId);
-  };
+  // Effect to load patient reports dynamically when selected
+  React.useEffect(() => {
+    if (!selectedPatientId) {
+      setSelectedPatientReports([]);
+      return;
+    }
+
+    const fetchReportsForPatient = async () => {
+      setLoadingPatientReports(true);
+      try {
+        const response = await fetch(`/api/reports?patientId=${selectedPatientId}`);
+        const data = await response.json();
+        if (data.success) {
+          const mapped: Report[] = (data.reports || []).map((r: any) => {
+            const items = (r.report_items || []).map((i: any) => ({
+              id: i.id,
+              name: i.test_name,
+              result: parseFloat(i.result_value) || 0,
+              unit: i.unit || '',
+              minNormal: parseFloat(i.normal_range?.split('-')[0]) || 0,
+              maxNormal: parseFloat(i.normal_range?.split('-')[1]) || 0,
+              status: (i.flag || 'NORMAL')
+            }));
+            const isAlert = items.some((item: any) => ['HIGH', 'LOW', 'CRITICAL'].includes(item.status));
+            return {
+              id: r.id,
+              labRef: r.report_no || 'L-UNKNOWN',
+              patientId: r.patient_id,
+              patientName: selectedPatient?.name || 'Selected Patient',
+              date: new Date(r.published_at || r.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+              title: r.status === 'published' ? (items.length > 3 ? 'Comprehensive Blood Panel' : 'Lipid Profile & Glucose') : 'Pending Blood Chemistry',
+              referrer: 'Dr. Sarah Miller',
+              patientAlertRequired: isAlert,
+              items,
+              pdf_url: r.pdf_url || undefined,
+              doctorRemarks: r.notes || (isAlert ? 'Needs attention.' : 'Patient demonstrates excellent physiological wellness.')
+            };
+          });
+          setSelectedPatientReports(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to load selected patient reports:', err);
+      } finally {
+        setLoadingPatientReports(false);
+      }
+    };
+
+    fetchReportsForPatient();
+  }, [selectedPatientId, selectedPatient?.name]);
 
   const handleRegisterPatient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,8 +303,8 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
         onDeletePatient(deletePatientId);
       }
 
-      if (selectedPatientId === deletePatientId) {
-        setSelectedPatientId(null);
+      if (selectedPatient?.id === deletePatientId) {
+        setSelectedPatient(null);
       }
 
       setIsDeleteModalOpen(false);
@@ -247,9 +315,6 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
     }
   };
 
-  const selectedPatient = patients.find(p => p.id === selectedPatientId);
-  const patientReports = selectedPatientId ? getPatientReports(selectedPatientId) : [];
-
   // Shared input styles
   const inputClass = "w-full bg-white border border-slate-200 pl-3.5 pr-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-900 focus:border-[#004e9f] focus:ring-2 focus:ring-blue-100 outline-none transition-all placeholder:text-slate-400";
   const labelClass = "block text-[11px] uppercase font-bold text-slate-500 mb-1.5 tracking-wider";
@@ -257,14 +322,14 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
 
   return (
     <div className="space-y-6 pb-12">
-      
+
       {/* Title Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 border-b border-gray-100 pb-5">
         <div>
           <h2 className="text-2xl font-extrabold text-[#191c1d] tracking-tight">Patient Database Directory</h2>
           <p className="text-sm text-slate-500 font-medium mt-1.5">Manage patient accounts, register profiles, and review clinical histories.</p>
         </div>
-        
+
         <button
           onClick={() => { resetForm(); setIsModalOpen(true); }}
           className="flex items-center gap-1.5 px-5 py-3 bg-[#004e9f] hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/10 active:scale-95 cursor-pointer"
@@ -276,10 +341,10 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
 
       {/* Search Bar */}
       <div className="relative max-w-md w-full">
-        <input 
+        <input
           type="text"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search by patient name, email, or phone..."
           className="w-full bg-white border border-[#c1c6d5]/40 pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium text-slate-800 focus:border-[#004e9f] focus:ring-2 focus:ring-blue-100 outline-none transition-all shadow-sm placeholder:text-slate-400"
         />
@@ -288,76 +353,100 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
 
       {/* Main Content Splitter */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
+
         {/* Patient Cards Listing Grid */}
-        <div className={`${selectedPatientId ? 'lg:col-span-6' : 'lg:col-span-12'} grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-300`}>
-          {filteredPatients.length === 0 ? (
-            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl col-span-full">
-              <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-slate-500">No patient accounts found.</p>
+        <div className={`${selectedPatientId ? 'lg:col-span-6' : 'lg:col-span-12'} flex flex-col gap-4 transition-all duration-300`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredPatients.length === 0 ? (
+              <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl col-span-full">
+                <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm font-semibold text-slate-500">No patient accounts found.</p>
+              </div>
+            ) : (
+              filteredPatients.map((patient) => {
+                const patientReportsCount = patient.reportsCount || 0;
+                const isSelected = selectedPatientId === patient.id;
+
+                return (
+                  <motion.div
+                    whileHover={{ y: -2, boxShadow: '0 8px 20px -6px rgba(0,78,159,0.08)' }}
+                    key={patient.id}
+                    onClick={() => setSelectedPatient(isSelected ? null : patient)}
+                    className={`p-5 rounded-2xl border transition-all cursor-pointer bg-white relative ${isSelected
+                        ? 'border-[#004e9f] ring-2 ring-blue-50 shadow-md'
+                        : 'border-slate-200 hover:border-slate-300 shadow-sm'
+                      }`}
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <img
+                        alt={patient.name}
+                        src={patient.avatar}
+                        className="w-11 h-11 rounded-xl object-cover border-2 border-slate-100 shadow-sm shrink-0"
+                      />
+                      <div className="overflow-hidden flex-1 min-w-0">
+                        <h4 className="font-bold text-sm text-slate-900 truncate">{patient.name}</h4>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">{patient.email}</p>
+
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2.5 text-xs text-slate-600 font-medium">
+                          <span>Age: {patient.age}</span>
+                          <span className="text-slate-300">•</span>
+                          <span>Gender: {patient.gender}</span>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-[#004e9f] font-bold">{patient.bloodGroup || 'O+'}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end shrink-0 gap-2">
+                        <span className="px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 text-[10px] font-bold text-slate-600">
+                          {patientReportsCount} {patientReportsCount === 1 ? 'Report' : 'Reports'}
+                        </span>
+
+                        {/* Edit & Delete action buttons */}
+                        <div className="flex items-center gap-0.5">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openEditModal(patient); }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-[#004e9f] hover:bg-blue-50 transition-all"
+                            title="Edit patient"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openDeleteModal(patient); }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                            title="Remove patient"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Patients server-side pagination controls */}
+          {totalPatientsCount > pageSize && (
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
+              <button
+                onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer bg-white"
+              >
+                Previous
+              </button>
+              <span className="text-xs font-bold text-slate-500">
+                Page {currentPage} of {Math.ceil(totalPatientsCount / pageSize)}
+              </span>
+              <button
+                onClick={() => onPageChange(Math.min(currentPage + 1, Math.ceil(totalPatientsCount / pageSize)))}
+                disabled={currentPage === Math.ceil(totalPatientsCount / pageSize)}
+                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer bg-white"
+              >
+                Next
+              </button>
             </div>
-          ) : (
-            filteredPatients.map((patient) => {
-              const patientReportsCount = getPatientReports(patient.id).length;
-              const isSelected = selectedPatientId === patient.id;
-
-              return (
-                <motion.div
-                  whileHover={{ y: -2, boxShadow: '0 8px 20px -6px rgba(0,78,159,0.08)' }}
-                  key={patient.id}
-                  onClick={() => setSelectedPatientId(isSelected ? null : patient.id)}
-                  className={`p-5 rounded-2xl border transition-all cursor-pointer bg-white relative ${
-                    isSelected 
-                      ? 'border-[#004e9f] ring-2 ring-blue-50 shadow-md' 
-                      : 'border-slate-200 hover:border-slate-300 shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-start gap-3.5">
-                    <img 
-                      alt={patient.name}
-                      src={patient.avatar}
-                      className="w-11 h-11 rounded-xl object-cover border-2 border-slate-100 shadow-sm shrink-0"
-                    />
-                    <div className="overflow-hidden flex-1 min-w-0">
-                      <h4 className="font-bold text-sm text-slate-900 truncate">{patient.name}</h4>
-                      <p className="text-xs text-slate-500 truncate mt-0.5">{patient.email}</p>
-                      
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2.5 text-xs text-slate-600 font-medium">
-                        <span>Age: {patient.age}</span>
-                        <span className="text-slate-300">•</span>
-                        <span>Gender: {patient.gender}</span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-[#004e9f] font-bold">{patient.bloodGroup || 'O+'}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end shrink-0 gap-2">
-                      <span className="px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 text-[10px] font-bold text-slate-600">
-                        {patientReportsCount} {patientReportsCount === 1 ? 'Report' : 'Reports'}
-                      </span>
-                      
-                      {/* Edit & Delete action buttons */}
-                      <div className="flex items-center gap-0.5">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openEditModal(patient); }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-[#004e9f] hover:bg-blue-50 transition-all"
-                          title="Edit patient"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openDeleteModal(patient); }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
-                          title="Remove patient"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })
           )}
         </div>
 
@@ -373,7 +462,7 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
               {/* Header with patient avatar */}
               <div className="flex justify-between items-start border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-3.5">
-                  <img 
+                  <img
                     alt={selectedPatient.name}
                     src={selectedPatient.avatar}
                     className="w-14 h-14 rounded-2xl object-cover border-2 border-slate-100 shadow-md"
@@ -384,22 +473,22 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button 
+                  <button
                     onClick={() => openEditModal(selectedPatient)}
                     className="p-1.5 hover:bg-blue-50 rounded-lg text-slate-400 hover:text-[#004e9f] transition-colors"
                     title="Edit patient"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
-                  <button 
+                  <button
                     onClick={() => openDeleteModal(selectedPatient)}
                     className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 transition-colors"
                     title="Remove patient"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <button 
-                    onClick={() => setSelectedPatientId(null)}
+                  <button
+                    onClick={() => setSelectedPatient(null)}
                     className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-800 transition-colors"
                   >
                     <X className="w-4.5 h-4.5" />
@@ -452,15 +541,19 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
 
               {/* Patient Reports list section */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold uppercase text-slate-500 tracking-wider">Reports Log ({patientReports.length})</h4>
-                {patientReports.length === 0 ? (
+                <h4 className="text-xs font-bold uppercase text-slate-500 tracking-wider">Reports Log ({selectedPatientReports.length})</h4>
+                {loadingPatientReports ? (
+                  <div className="flex items-center justify-center py-8 bg-slate-50 border border-slate-100 rounded-xl">
+                    <Loader2 className="w-5 h-5 text-[#004e9f] animate-spin" />
+                  </div>
+                ) : selectedPatientReports.length === 0 ? (
                   <div className="p-6 border border-dashed border-slate-200 rounded-xl text-center">
                     <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                     <p className="text-xs font-semibold text-slate-500">No medical reports registered for this patient yet.</p>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                    {patientReports.map((report) => (
+                    {selectedPatientReports.map((report) => (
                       <div
                         key={report.id}
                         onClick={() => onNavigateToReport(report.id)}
@@ -473,11 +566,10 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
                             <p className="text-[10px] text-slate-500 mt-0.5">#{report.id} • {report.date}</p>
                           </div>
                         </div>
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${
-                          report.patientAlertRequired 
-                            ? 'bg-rose-50 text-rose-700 border-rose-200' 
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${report.patientAlertRequired
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
                             : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        }`}>
+                          }`}>
                           {report.patientAlertRequired ? 'ALERT' : 'NORMAL'}
                         </span>
                       </div>
@@ -513,7 +605,7 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
                       <p className="text-xs text-slate-500 font-medium mt-0.5">Create login credentials & database profile</p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setIsModalOpen(false)}
                     className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all"
                   >
@@ -524,7 +616,7 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
 
               {/* Form Body */}
               <form onSubmit={handleRegisterPatient} className="p-7 space-y-5">
-                
+
                 <div>
                   <label className={labelClass}>Full Name</label>
                   <input type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter patient full name" className={inputClass} />
@@ -629,7 +721,7 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
                       <p className="text-xs text-slate-500 font-medium mt-0.5">Update profile information in the database</p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setIsEditModalOpen(false)}
                     className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all"
                   >
@@ -640,7 +732,7 @@ export default function PatientsPanel({ patients, reports, onAddPatientLocal, on
 
               {/* Form Body */}
               <form onSubmit={handleEditPatient} className="p-7 space-y-5">
-                
+
                 <div>
                   <label className={labelClass}>Full Name</label>
                   <input type="text" required value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Patient full name" className={inputClass} />

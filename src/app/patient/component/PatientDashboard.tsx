@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { 
   Plus, 
   Share2, 
   Download, 
   ArrowUpRight, 
-  X, 
   Mail, 
   Info, 
   ExternalLink,
   Milestone,
   CheckCircle2,
-  CalendarDays,
   FileSpreadsheet,
   Gauge,
   Activity,
@@ -32,7 +30,6 @@ interface PatientDashboardProps {
 }
 
 export default function PatientDashboard({ onNavigateToReport, reports, currentUserProfile }: PatientDashboardProps) {
-  const [showToast, setShowToast] = useState(true);
   const [activeTrendRange, setActiveTrendRange] = useState<'6M' | '1Y' | 'ALL'>('6M');
   const [selectedTimelinePoint, setSelectedTimelinePoint] = useState<number>(3); // AUG
 
@@ -195,43 +192,6 @@ export default function PatientDashboard({ onNavigateToReport, reports, currentU
   return (
     <div className="space-y-8 pb-12">
       
-      {/* Toast simulated warning banner */}
-      <AnimatePresence>
-        {showToast && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="bg-[#004e9f] text-white p-4.5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg shadow-blue-500/15 overflow-hidden"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="bg-white/20 p-2 rounded-xl">
-                <CalendarDays className="w-5 h-5 text-[#dfe8ff]" />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider mb-0.5">New report available</p>
-                <p className="text-sm font-semibold text-[#dfe8ff]"> Your Lipid Profile &amp; Glucose results from Oct 24 are now ready for review.</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 shrink-0 items-center justify-end w-full md:w-auto">
-              <button 
-                onClick={() => onNavigateToReport(reports[0]?.id || 'ML-8842-2023')}
-                className="px-4 py-2 bg-white text-[#004e9f] hover:bg-slate-100 rounded-xl text-xs font-extrabold transition-all active:scale-95 shadow-sm"
-              >
-                View Now
-              </button>
-              <button 
-                onClick={() => setShowToast(false)} 
-                className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Welcome & Interactive Actions */}
       <section className="bg-white p-8 rounded-2xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
         <div>

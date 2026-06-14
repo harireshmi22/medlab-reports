@@ -3,12 +3,18 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Sidebar from '@/app/patient/component/Sidebar'
 import AdminDashboard from '../component/AdminDashboard'
-import AddReport from '../component/AddReport'
+import dynamic from 'next/dynamic'
+
+const AddReport = dynamic(() => import('../component/AddReport'), {
+    loading: () => <Loader2 className="animate-spin w-6 h-6 text-[#004e9f]" />,
+    ssr: false
+})
+
 import PatientsPanel from '@/app/patient/component/PatientsPanel'
 import ReportDetails from '@/app/patient/component/ReportDetails'
 import { motion, AnimatePresence } from 'motion/react'
-import { 
-    Activity, 
+import {
+    Activity,
     Bell,
     Send,
     Loader2
@@ -19,103 +25,103 @@ import { createClient } from '@/lib/supabase/client'
 import useSWR from 'swr'
 
 interface DashboardClientProps {
-  initialPatients: Patient[];
-  initialReports: Report[];
-  initialStats: {
-    totalPatients: number;
-    totalReports: number;
-    pendingReports: number;
-    criticalReports: number;
-  };
-  initialPatientsTotal: number;
-  initialReportsTotal: number;
+    initialPatients: Patient[];
+    initialReports: Report[];
+    initialStats: {
+        totalPatients: number;
+        totalReports: number;
+        pendingReports: number;
+        criticalReports: number;
+    };
+    initialPatientsTotal: number;
+    initialReportsTotal: number;
 }
 
 interface DashboardData {
-  patients: Patient[];
-  patientsTotal: number;
-  reports: Report[];
-  reportsTotal: number;
-  statsCounts: {
-    totalPatients: number;
-    totalReports: number;
-    pendingReports: number;
-    criticalReports: number;
-  };
+    patients: Patient[];
+    patientsTotal: number;
+    reports: Report[];
+    reportsTotal: number;
+    statsCounts: {
+        totalPatients: number;
+        totalReports: number;
+        pendingReports: number;
+        criticalReports: number;
+    };
 }
 
 const dashboardFetcher = async (key: [string, number, string, number]): Promise<DashboardData> => {
-  const [_, pPage, pSearch, rPage] = key;
-  const supabase = createClient();
+    const [_, pPage, pSearch, rPage] = key;
+    const supabase = createClient();
 
-  // 1. Fetch exact database counts for stats (to keep stats accurate without fetching all rows)
-  const { count: totalPatientsCount } = await supabase
-      .from('patients')
-      .select('*', { count: 'exact', head: true });
-  
-  const { count: totalReportsCount } = await supabase
-      .from('reports')
-      .select('*', { count: 'exact', head: true });
+    // 1. Fetch exact database counts for stats (to keep stats accurate without fetching all rows)
+    const { count: totalPatientsCount } = await supabase
+        .from('patients')
+        .select('*', { count: 'exact', head: true });
 
-  // Count pending/alert and critical from report_items (distinct count of report_ids)
-  const { data: alertItems } = await supabase
-      .from('report_items')
-      .select('report_id')
-      .in('flag', ['HIGH', 'LOW', 'CRITICAL']);
-  const uniquePendingIds = new Set(alertItems?.map(item => item.report_id) || []);
-  const pendingCountVal = uniquePendingIds.size;
+    const { count: totalReportsCount } = await supabase
+        .from('reports')
+        .select('*', { count: 'exact', head: true });
 
-  const { data: criticalItems } = await supabase
-      .from('report_items')
-      .select('report_id')
-      .eq('flag', 'CRITICAL');
-  const uniqueCriticalIds = new Set(criticalItems?.map(item => item.report_id) || []);
-  const criticalCountVal = uniqueCriticalIds.size;
+    // Count pending/alert and critical from report_items (distinct count of report_ids)
+    const { data: alertItems } = await supabase
+        .from('report_items')
+        .select('report_id')
+        .in('flag', ['HIGH', 'LOW', 'CRITICAL']);
+    const uniquePendingIds = new Set(alertItems?.map(item => item.report_id) || []);
+    const pendingCountVal = uniquePendingIds.size;
 
-  const statsCounts = {
-      totalPatients: totalPatientsCount || 0,
-      totalReports: totalReportsCount || 0,
-      pendingReports: pendingCountVal,
-      criticalReports: criticalCountVal
-  };
+    const { data: criticalItems } = await supabase
+        .from('report_items')
+        .select('report_id')
+        .eq('flag', 'CRITICAL');
+    const uniqueCriticalIds = new Set(criticalItems?.map(item => item.report_id) || []);
+    const criticalCountVal = uniqueCriticalIds.size;
 
-  // 2. Fetch paginated patients matching search query (10 per page)
-  let pQuery = supabase
-      .from('patients')
-      .select('*, reports(count)', { count: 'exact' });
+    const statsCounts = {
+        totalPatients: totalPatientsCount || 0,
+        totalReports: totalReportsCount || 0,
+        pendingReports: pendingCountVal,
+        criticalReports: criticalCountVal
+    };
 
-  if (pSearch.trim()) {
-      pQuery = pQuery.or(`name.ilike.%${pSearch}%,email.ilike.%${pSearch}%,phone.ilike.%${pSearch}%`);
-  }
+    // 2. Fetch paginated patients matching search query (10 per page)
+    let pQuery = supabase
+        .from('patients')
+        .select('*, reports(count)', { count: 'exact' });
 
-  pQuery = pQuery.order('created_at', { ascending: false });
+    if (pSearch.trim()) {
+        pQuery = pQuery.or(`name.ilike.%${pSearch}%,email.ilike.%${pSearch}%,phone.ilike.%${pSearch}%`);
+    }
 
-  const pFrom = (pPage - 1) * 10;
-  const pTo = pFrom + 10 - 1;
+    pQuery = pQuery.order('created_at', { ascending: false });
 
-  const { data: dbPatients, count: pCount, error: pError } = await pQuery.range(pFrom, pTo);
+    const pFrom = (pPage - 1) * 10;
+    const pTo = pFrom + 10 - 1;
 
-  if (pError) throw pError;
+    const { data: dbPatients, count: pCount, error: pError } = await pQuery.range(pFrom, pTo);
 
-  const mappedPatients: Patient[] = (dbPatients || []).map((p: Record<string, any>) => ({
-      id: p.id as string,
-      name: p.name as string,
-      email: (p.email as string) || '',
-      age: (p.age as number) || 30,
-      gender: (p.gender as string) || 'Not specified',
-      bloodGroup: (p.blood_group as string) || 'O+',
-      avatar: (p.avatar_url as string) || `https://avatar.vercel.sh/${p.name}`,
-      phone: (p.phone as string) || '',
-      reportsCount: (p.reports as any)?.[0]?.count || 0
-  }));
+    if (pError) throw pError;
 
-  // 3. Fetch paginated reports (10 per page)
-  const rFrom = (rPage - 1) * 10;
-  const rTo = rFrom + 10 - 1;
+    const mappedPatients: Patient[] = (dbPatients || []).map((p: Record<string, any>) => ({
+        id: p.id as string,
+        name: p.name as string,
+        email: (p.email as string) || '',
+        age: (p.age as number) || 30,
+        gender: (p.gender as string) || 'Not specified',
+        bloodGroup: (p.blood_group as string) || 'O+',
+        avatar: (p.avatar_url as string) || `https://avatar.vercel.sh/${p.name}`,
+        phone: (p.phone as string) || '',
+        reportsCount: (p.reports as any)?.[0]?.count || 0
+    }));
 
-  const { data: dbReports, count: rCount, error: rError } = await supabase
-      .from('reports')
-      .select(`
+    // 3. Fetch paginated reports (10 per page)
+    const rFrom = (rPage - 1) * 10;
+    const rTo = rFrom + 10 - 1;
+
+    const { data: dbReports, count: rCount, error: rError } = await supabase
+        .from('reports')
+        .select(`
           *,
           patients (
               name
@@ -124,70 +130,70 @@ const dashboardFetcher = async (key: [string, number, string, number]): Promise<
               *
           )
       `, { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(rFrom, rTo);
+        .order('created_at', { ascending: false })
+        .range(rFrom, rTo);
 
-  if (rError) throw rError;
+    if (rError) throw rError;
 
-  const mappedReports: Report[] = (dbReports || []).map(r => {
-      const items: ReportItem[] = (r.report_items || []).map((i: any) => ({
-          id: i.id,
-          name: i.test_name,
-          result: parseFloat(i.result_value) || 0,
-          unit: i.unit || '',
-          minNormal: parseFloat(i.normal_range?.split('-')[0]) || 0,
-          maxNormal: parseFloat(i.normal_range?.split('-')[1]) || 0,
-          status: (i.flag || 'NORMAL') as 'NORMAL' | 'BORDERLINE' | 'HIGH' | 'LOW' | 'CRITICAL'
-      }));
+    const mappedReports: Report[] = (dbReports || []).map(r => {
+        const items: ReportItem[] = (r.report_items || []).map((i: any) => ({
+            id: i.id,
+            name: i.test_name,
+            result: parseFloat(i.result_value) || 0,
+            unit: i.unit || '',
+            minNormal: parseFloat(i.normal_range?.split('-')[0]) || 0,
+            maxNormal: parseFloat(i.normal_range?.split('-')[1]) || 0,
+            status: (i.flag || 'NORMAL') as 'NORMAL' | 'BORDERLINE' | 'HIGH' | 'LOW' | 'CRITICAL'
+        }));
 
-      const isAlert = items.some(item => ['HIGH', 'LOW', 'CRITICAL'].includes(item.status));
-      const criticalNotes = items
-          .filter(item => ['CRITICAL', 'HIGH'].includes(item.status))
-          .map(item => `elevated ${item.name}`)
-          .join(' and ');
+        const isAlert = items.some(item => ['HIGH', 'LOW', 'CRITICAL'].includes(item.status));
+        const criticalNotes = items
+            .filter(item => ['CRITICAL', 'HIGH'].includes(item.status))
+            .map(item => `elevated ${item.name}`)
+            .join(' and ');
 
-      return {
-          id: r.id,
-          labRef: r.report_no || 'L-UNKNOWN',
-          patientId: r.patient_id,
-          patientName: r.patients?.name || 'Unknown Patient',
-          date: new Date(r.published_at || r.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-          title: r.status === 'published' ? (items.length > 3 ? 'Comprehensive Blood Panel' : 'Lipid Profile & Glucose') : 'Pending Blood Chemistry',
-          referrer: 'Dr. Sarah Miller',
-          patientAlertRequired: isAlert,
-          alertText: isAlert
-              ? `Attention Required: Values parsed indicate immediate consultation range regarding ${criticalNotes || 'blood densities'}.`
-              : undefined,
-          doctorRemarks: r.notes || (isAlert
-              ? `The patient shows elevated thresholds for ${criticalNotes}. Advised immediate follow-up.`
-              : `Patient metrics demonstrate excellent overall physiological wellness.`),
-          labNote: 'Processed via Supabase database client.',
-          items,
-          pdf_url: r.pdf_url || undefined
-      };
-  });
+        return {
+            id: r.id,
+            labRef: r.report_no || 'L-UNKNOWN',
+            patientId: r.patient_id,
+            patientName: r.patients?.name || 'Unknown Patient',
+            date: new Date(r.published_at || r.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+            title: r.status === 'published' ? (items.length > 3 ? 'Comprehensive Blood Panel' : 'Lipid Profile & Glucose') : 'Pending Blood Chemistry',
+            referrer: 'Dr. Sarah Miller',
+            patientAlertRequired: isAlert,
+            alertText: isAlert
+                ? `Attention Required: Values parsed indicate immediate consultation range regarding ${criticalNotes || 'blood densities'}.`
+                : undefined,
+            doctorRemarks: r.notes || (isAlert
+                ? `The patient shows elevated thresholds for ${criticalNotes}. Advised immediate follow-up.`
+                : `Patient metrics demonstrate excellent overall physiological wellness.`),
+            labNote: 'Processed via Supabase database client.',
+            items,
+            pdf_url: r.pdf_url || undefined
+        };
+    });
 
-  return {
-      patients: mappedPatients,
-      patientsTotal: pCount || 0,
-      reports: mappedReports,
-      reportsTotal: rCount || 0,
-      statsCounts
-  };
+    return {
+        patients: mappedPatients,
+        patientsTotal: pCount || 0,
+        reports: mappedReports,
+        reportsTotal: rCount || 0,
+        statsCounts
+    };
 };
 
 export default function DashboardClient({
-  initialPatients,
-  initialReports,
-  initialStats,
-  initialPatientsTotal,
-  initialReportsTotal
+    initialPatients,
+    initialReports,
+    initialStats,
+    initialPatientsTotal,
+    initialReportsTotal
 }: DashboardClientProps) {
     const [activeTab, setActiveTab] = useState<DashboardSideTab>('Dashboard')
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
     const [selectedReportId, setSelectedReportId] = useState<string | null>(null)
     const [isAddReportOpen, setIsAddReportOpen] = useState(false)
-    
+
     // Alert state
     const [alertMessage, setAlertMessage] = useState("")
 
@@ -261,7 +267,7 @@ export default function DashboardClient({
             setAlertMessage(`Successfully verified and published report for ${newReport.patientName}!`)
             setTimeout(() => setAlertMessage(""), 4000)
             setIsAddReportOpen(false)
-            
+
             // Reload cached database state
             mutate()
 
@@ -354,7 +360,7 @@ export default function DashboardClient({
                 {/* Header bar */}
                 <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-[#c1c6d5]/40 h-16 px-6 md:px-8 flex items-center justify-between z-20 shadow-xs">
                     <div className="flex items-center gap-4">
-                        <button 
+                        <button
                             onClick={() => setIsMobileSidebarOpen(true)}
                             className="p-2 -ml-2 rounded-lg text-gray-500 hover:bg-slate-100 md:hidden"
                         >
@@ -474,9 +480,8 @@ export default function DashboardClient({
                                                     className="w-full text-left p-5 border border-slate-200/80 rounded-xl shadow-xs hover:border-[#004e9f]/50 hover:shadow-md transition-all cursor-pointer bg-white flex justify-between items-start"
                                                 >
                                                     <div className="space-y-2">
-                                                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                                                            report.patientAlertRequired ? 'bg-rose-50 text-[#ba1a1a]' : 'bg-emerald-50 text-emerald-700'
-                                                        }`}>
+                                                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${report.patientAlertRequired ? 'bg-rose-50 text-[#ba1a1a]' : 'bg-emerald-50 text-emerald-700'
+                                                            }`}>
                                                             {report.patientAlertRequired ? 'Alert' : 'Released'}
                                                         </span>
                                                         <h4 className="font-bold text-slate-800">{report.patientName}</h4>
@@ -522,7 +527,7 @@ export default function DashboardClient({
                                 className="bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-xs max-w-2xl space-y-6"
                             >
                                 <h3 className="font-extrabold text-slate-800">LIS Settings</h3>
-                                
+
                                 <div className="space-y-4 divide-y divide-slate-100">
                                     <div className="py-4 first:pt-0">
                                         <h4 className="font-bold text-slate-800 text-sm mb-1">HL7 Analyzer Integration</h4>

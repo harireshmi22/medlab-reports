@@ -1,6 +1,12 @@
 "use client";
 
-import AddReport from '@/app/admin/component/AddReport'
+import dynamic from 'next/dynamic'
+import { Loader2 } from 'lucide-react'
+
+const AddReport = dynamic(() => import('@/app/admin/component/AddReport'), {
+    loading: () => <Loader2 className="animate-spin w-6 h-6 text-[#004e9f]" />,
+    ssr: false
+})
 
 const page = () => {
     return (

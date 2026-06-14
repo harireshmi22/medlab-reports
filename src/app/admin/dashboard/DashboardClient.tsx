@@ -68,6 +68,7 @@ const dashboardFetcher = async (key: [string, number, string, number]): Promise<
         .from('report_items')
         .select('report_id')
         .in('flag', ['HIGH', 'LOW', 'CRITICAL']);
+
     const uniquePendingIds = new Set(alertItems?.map(item => item.report_id) || []);
     const pendingCountVal = uniquePendingIds.size;
 
@@ -75,6 +76,7 @@ const dashboardFetcher = async (key: [string, number, string, number]): Promise<
         .from('report_items')
         .select('report_id')
         .eq('flag', 'CRITICAL');
+
     const uniqueCriticalIds = new Set(criticalItems?.map(item => item.report_id) || []);
     const criticalCountVal = uniqueCriticalIds.size;
 

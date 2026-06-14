@@ -154,18 +154,19 @@ export default function LandingPage({
                         initial={{ opacity: 0, x: 30 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
-                        className="relative"
+                        className="relative max-w-lg mx-auto w-full"
                     >
                         <div className="absolute -top-12 -right-12 w-64 h-64 bg-blue-200/40 blur-3xl rounded-full"></div>
                         <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-teal-100/40  blur-3xl rounded-full"></div>
 
                         <div className="bg-white rounded-2xl p-4 shadow-2xl relative overflow-hidden border border-slate-100 group">
                             <Image
-                                className="rounded-xl w-full aspect-4/3 object-cover"
+                                className="rounded-xl w-full aspect-square object-cover"
                                 alt="Modern health diagnostics monitor"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBKnYNYC79PNVWT8YmIqQY6gjoPcrJVIvGvJLtLtNvWtnA-CNu1v-WJ3Klglpu4ACE3bybmKqx97blo4uEuNeu_R1e0sLC0whwlqP_GvZeoPIj3HZIWz0VH6jJXv8EmuMT10U0C81DIgw6t1qIO7eGX-EM0YPc1uBv-Msj9ae4lL0ToDeyyHcUuaeOLUASzkAcmYdi-EO0Oys_YXjjWZPG8PD1sYVcxky4WvqaihT-aa03wJTRxamO58a6eT8EvVKxkimg9XxwDA"
-                                width={"10"}
-                                height={"10"}
+                                src="/computer.png"
+                                width={512}
+                                height={512}
+                                preload={true}
                             />
                             <div className="absolute top-8 right-8 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-2 border border-slate-100 animate-bounce-subtle">
                                 <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></div>

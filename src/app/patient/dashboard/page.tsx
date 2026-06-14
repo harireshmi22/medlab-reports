@@ -203,7 +203,7 @@ export default function PatientDashboardPage() {
                         >
                             <Activity className="w-5 h-5 text-[#004e9f]" />
                         </button>
-                        <h2 className="font-extrabold text-slate-800 text-lg tracking-tight capitalize">{activeTab}</h2>
+                        <h2 className="font-extrabold text-slate-800 text-lg tracking-tight capitalize font-[family-name:var(--font-heading)]">{activeTab}</h2>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -263,7 +263,7 @@ export default function PatientDashboardPage() {
                                 ) : (
                                     <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
                                         <div className="pb-4 border-b border-slate-100">
-                                            <h3 className="font-extrabold text-slate-800">Available Reports</h3>
+                                            <h3 className="font-extrabold text-slate-800 font-[family-name:var(--font-heading)]">Available Reports</h3>
                                             <p className="text-slate-400 text-xs mt-0.5">Select a report below to view detailed breakdown</p>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -277,7 +277,7 @@ export default function PatientDashboardPage() {
                                                         <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${report.patientAlertRequired ? 'bg-rose-50 text-[#ba1a1a]' : 'bg-emerald-50 text-emerald-700'}`}>
                                                             {report.patientAlertRequired ? 'Alert' : 'Normal'}
                                                         </span>
-                                                        <h4 className="font-bold text-slate-800">{report.title}</h4>
+                                                        <h4 className="font-bold text-slate-800 font-[family-name:var(--font-heading)]">{report.title}</h4>
                                                         <p className="text-xs text-slate-400 font-semibold">{report.date} • {report.referrer}</p>
                                                     </div>
                                                 </button>
@@ -297,11 +297,11 @@ export default function PatientDashboardPage() {
                                 exit={{ opacity: 0, y: -15 }}
                                 className="bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-xs space-y-6 max-w-2xl"
                             >
-                                <h3 className="font-extrabold text-slate-800">Account Settings</h3>
+                                <h3 className="font-extrabold text-slate-800 font-[family-name:var(--font-heading)]">Account Settings</h3>
 
                                 <div className="space-y-4 divide-y divide-slate-100">
                                     <div className="py-4 first:pt-0">
-                                        <h4 className="font-bold text-slate-800 text-sm mb-1">Email Notifications</h4>
+                                        <h4 className="font-bold text-slate-800 text-sm mb-1 font-[family-name:var(--font-heading)]">Email Notifications</h4>
                                         <p className="text-slate-400 text-xs leading-relaxed mb-3">Get automated notification logs whenever laboratory testing reports are published.</p>
                                         <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
                                             <input type="checkbox" defaultChecked className="rounded text-[#004e9f] focus:ring-[#004e9f]" />
@@ -310,7 +310,7 @@ export default function PatientDashboardPage() {
                                     </div>
 
                                     <div className="py-4">
-                                        <h4 className="font-bold text-slate-800 text-sm mb-1">HIPAA Consent & Safety</h4>
+                                        <h4 className="font-bold text-slate-800 text-sm mb-1 font-[family-name:var(--font-heading)]">HIPAA Consent & Safety</h4>
                                         <p className="text-slate-400 text-xs leading-relaxed mb-3">Authorize medical analyzer systems to deliver structured JSON logs to your dashboard.</p>
                                         <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
                                             <input type="checkbox" defaultChecked className="rounded text-[#004e9f] focus:ring-[#004e9f]" />

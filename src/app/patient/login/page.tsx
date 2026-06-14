@@ -73,7 +73,7 @@ export default function PatientLogin() {
                         <div className="w-10 h-10 rounded-xl bg-[#004e9f] flex items-center justify-center text-white shadow-md shadow-blue-500/10">
                             <FlaskConical className="w-5 h-5" />
                         </div>
-                        <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">MedLab Reports</span>
+                        <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent font-[family-name:var(--font-heading)]">MedLab Reports</span>
                     </Link>
                 </motion.div>
 
@@ -88,7 +88,7 @@ export default function PatientLogin() {
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-bold text-blue-400 uppercase tracking-wider">
                             <Sparkles className="w-3.5 h-3.5" /> Patient Portal
                         </span>
-                        <h1 className="text-4xl font-extrabold leading-tight tracking-tight">
+                        <h1 className="text-4xl font-extrabold leading-tight tracking-tight font-[family-name:var(--font-heading)]">
                             Access Your Health Records Safely & Instantly
                         </h1>
                         <p className="text-slate-400 text-base leading-relaxed">
@@ -165,7 +165,7 @@ export default function PatientLogin() {
                     <div className="p-8">
                         {/* Title and subtitle */}
                         <div className="text-center mb-8">
-                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Patient Login</h2>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight font-[family-name:var(--font-heading)]">Patient Login</h2>
                             <p className="text-slate-500 text-sm font-medium mt-1.5">Access your diagnostic reports</p>
                         </div>
 

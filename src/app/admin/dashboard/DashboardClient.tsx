@@ -368,7 +368,7 @@ export default function DashboardClient({
                         >
                             <Activity className="w-5 h-5 text-[#004e9f]" />
                         </button>
-                        <h2 className="font-extrabold text-slate-800 text-lg tracking-tight capitalize">{activeTab}</h2>
+                        <h2 className="font-extrabold text-slate-800 text-lg tracking-tight capitalize font-[family-name:var(--font-heading)]">{activeTab}</h2>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -471,7 +471,7 @@ export default function DashboardClient({
                                 ) : (
                                     <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
                                         <div className="pb-4 border-b border-slate-100">
-                                            <h3 className="font-extrabold text-slate-800">Released Reports Log</h3>
+                                            <h3 className="font-extrabold text-slate-800 font-[family-name:var(--font-heading)]">Released Reports Log</h3>
                                             <p className="text-slate-400 text-xs mt-0.5">Select a report below to review diagnostic metrics</p>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -486,7 +486,7 @@ export default function DashboardClient({
                                                             }`}>
                                                             {report.patientAlertRequired ? 'Alert' : 'Released'}
                                                         </span>
-                                                        <h4 className="font-bold text-slate-800">{report.patientName}</h4>
+                                                        <h4 className="font-bold text-slate-800 font-[family-name:var(--font-heading)]">{report.patientName}</h4>
                                                         <p className="text-xs text-slate-400 font-semibold">{report.title} • {report.date}</p>
                                                     </div>
                                                 </button>
@@ -528,11 +528,11 @@ export default function DashboardClient({
                                 exit={{ opacity: 0, y: -15 }}
                                 className="bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-xs max-w-2xl space-y-6"
                             >
-                                <h3 className="font-extrabold text-slate-800">LIS Settings</h3>
+                                <h3 className="font-extrabold text-slate-800 font-[family-name:var(--font-heading)]">LIS Settings</h3>
 
                                 <div className="space-y-4 divide-y divide-slate-100">
                                     <div className="py-4 first:pt-0">
-                                        <h4 className="font-bold text-slate-800 text-sm mb-1">HL7 Analyzer Integration</h4>
+                                        <h4 className="font-bold text-slate-800 text-sm mb-1 font-[family-name:var(--font-heading)]">HL7 Analyzer Integration</h4>
                                         <p className="text-slate-400 text-xs leading-relaxed mb-3">Sync verified telemetry directly with medical analyzers.</p>
                                         <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
                                             <input type="checkbox" defaultChecked className="rounded text-[#004e9f] focus:ring-[#004e9f]" />

@@ -23,7 +23,7 @@ const Header = ({
                     <div className="w-10 h-10 rounded-xl bg-[#004e9f] flex items-center justify-center text-white shadow-md shadow-[#004e9f]/20">
                         <FlaskConical className="w-5 h-5" />
                     </div>
-                    <span className="font-bold text-xl tracking-tight text-[#004e9f]">MedLab Reports</span>
+                    <span className="font-bold text-xl tracking-tight text-[#004e9f] font-[family-name:var(--font-heading)]">MedLab Reports</span>
                 </div>
 
                 <div className="hidden md:flex gap-8 items-center">
@@ -105,7 +105,7 @@ const Header = ({
                                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                             className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-40"
                                         >
-                                            <div className="px-3 py-2 text-xs font-semibold text-gray-400 border-b border-gray-50 uppercase tracking-wider">
+                                            <div className="px-3 py-2 text-xs font-semibold text-gray-400 border-b border-gray-50 uppercase tracking-wider font-[family-name:var(--font-heading)]">
                                                 Access Diagnostics
                                             </div>
                                             <Link href="/patient/login">

@@ -23,7 +23,7 @@ import {
     LogOut
 } from 'lucide-react';
 import { ViewState } from '@/types';
-import { redirect } from 'next/dist/server/api-utils';
+
 
 interface LandingPageProps {
     onNavigate?: (view: ViewState) => void;
@@ -98,8 +98,8 @@ export default function LandingPage({
                         <span className="inline-block px-4 py-1.5 bg-blue-100 text-[#004e9f] rounded-full text-xs font-bold uppercase tracking-wider mb-6 shadow-sm">
                             NEW: Automated Pathology Workflows
                         </span>
-                        <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 leading-[1.15] tracking-tight mb-6">
-                            Real-Time Blood Report Management for Modern Labs
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-[1.1] tracking-tight mb-6 font-[family-name:var(--font-heading)]">
+                            Real-Time Blood Report Management for <span className="bg-gradient-to-r from-[#004e9f] to-[#0077cc] bg-clip-text text-transparent">Modern Labs</span>
                         </h1>
                         <p className="text-gray-600 text-lg mb-8 max-w-[540px] leading-relaxed">
                             Upload, manage, and deliver patient blood reports instantly with secure dashboards and real-time updates. Experience a clinical ecosystem built for speed and precision.
@@ -180,7 +180,7 @@ export default function LandingPage({
             <section id="features" className="py-20 bg-slate-100 border-t border-b border-gray-200/50">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-extrabold text-slate-900 mb-4">Precision Features for Patient Excellence</h2>
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-4 font-[family-name:var(--font-heading)]">Precision Features for Patient Excellence</h2>
                         <p className="text-gray-600 text-lg max-w-2xl mx-auto">
                             Our platform bridges the gap between laboratory processing and patient understanding with specialized tools.
                         </p>
@@ -197,7 +197,7 @@ export default function LandingPage({
                                     <div className="w-12 h-12 bg-blue-50 group-hover:bg-[#004e9f]/10 rounded-xl flex items-center justify-center text-[#004e9f] mb-6 transition-colors">
                                         {feature.icon}
                                     </div>
-                                    <h3 className="text-lg font-bold text-slate-800 mb-3">{feature.title}</h3>
+                                    <h3 className="text-lg font-bold text-slate-800 mb-3 font-[family-name:var(--font-heading)]">{feature.title}</h3>
                                     <p className="text-sm text-gray-500 leading-relaxed">{feature.desc}</p>
                                 </div>
                             </motion.div>
@@ -210,7 +210,7 @@ export default function LandingPage({
             <section id="how-it-works" className="py-20 px-6 bg-white">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-extrabold text-slate-900 mb-4">How It Works</h2>
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-4 font-[family-name:var(--font-heading)]">How It Works</h2>
                         <p className="text-[#414753] text-lg">Streamlining the diagnostic lifecycle in three simple steps.</p>
                     </div>
 
@@ -220,7 +220,7 @@ export default function LandingPage({
                             <div className="w-16 h-16 bg-[#004e9f] text-white rounded-full flex items-center justify-center font-bold text-2xl mb-6 shadow-lg shadow-blue-500/20">
                                 1
                             </div>
-                            <h4 className="text-lg font-bold text-slate-800 mb-3">Lab uploads report</h4>
+                            <h4 className="text-lg font-bold text-slate-800 mb-3 font-[family-name:var(--font-heading)]">Lab uploads report</h4>
                             <p className="text-sm text-gray-500 max-w-xs mb-6">Lab technicians upload PDF results or enter data directly into the secure portal.</p>
 
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 w-full max-w-[240px] shadow-sm">
@@ -247,7 +247,7 @@ export default function LandingPage({
                             <div className="w-16 h-16 bg-[#004e9f] text-white rounded-full flex items-center justify-center font-bold text-2xl mb-6 shadow-lg shadow-blue-500/20">
                                 2
                             </div>
-                            <h4 className="text-lg font-bold text-slate-800 mb-3">Patient gets notified</h4>
+                            <h4 className="text-lg font-bold text-slate-800 mb-3 font-[family-name:var(--font-heading)]">Patient gets notified</h4>
                             <p className="text-sm text-gray-500 max-w-xs mb-6 font-medium">Automated SMS and email notifications are triggered the moment results are verified.</p>
 
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 w-full max-w-[240px] shadow-sm flex flex-col justify-between h-[184px]">
@@ -268,7 +268,7 @@ export default function LandingPage({
                             <div className="w-16 h-16 bg-[#004e9f] text-white rounded-full flex items-center justify-center font-bold text-2xl mb-6 shadow-lg shadow-blue-500/20">
                                 3
                             </div>
-                            <h4 className="text-lg font-bold text-slate-800 mb-3">Patient views/downloads</h4>
+                            <h4 className="text-lg font-bold text-slate-800 mb-3 font-[family-name:var(--font-heading)]">Patient views/downloads</h4>
                             <p className="text-sm text-gray-500 max-w-xs mb-6">Secure access via the dashboard for viewing detailed trends and downloading PDF copies.</p>
 
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 w-full max-w-[240px] shadow-sm">
@@ -294,7 +294,7 @@ export default function LandingPage({
                 <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                     {stats.map((stat, idx) => (
                         <div key={idx}>
-                            <div className="text-4xl lg:text-5xl font-extrabold mb-2 tracking-tight">{stat.value}</div>
+                            <div className="text-4xl lg:text-5xl font-extrabold mb-2 tracking-tight font-[family-name:var(--font-heading)]">{stat.value}</div>
                             <div className="text-xs font-bold text-[#dfe8ff] tracking-widest uppercase">{stat.label}</div>
                         </div>
                     ))}
@@ -306,7 +306,7 @@ export default function LandingPage({
                 <div className="max-w-4xl mx-auto bg-white rounded-3xl p-10 md:p-14 text-center border border-gray-100 shadow-xl relative overflow-hidden">
                     <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#004e9f]/5 rounded-full blur-2xl"></div>
                     <div className="relative z-10">
-                        <h2 className="text-3xl font-extrabold text-slate-900 mb-4">Ready to modernize your lab workflows?</h2>
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-4 font-[family-name:var(--font-heading)]">Ready to modernize your lab workflows?</h2>
                         <p className="text-gray-600 text-lg mb-8 max-w-xl mx-auto">
                             Join hundreds of medical professionals who trust MedLab Reports for their diagnostic delivery.
                         </p>

@@ -107,7 +107,7 @@ export default function AdminDashboard({
       {/* Title section with date calendar */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 border-b border-gray-100 pb-5">
         <div>
-          <h2 className="text-2xl font-extrabold text-[#191c1d] tracking-tight">Dashboard Overview</h2>
+          <h2 className="text-2xl font-extrabold text-[#191c1d] tracking-tight font-[family-name:var(--font-heading)]">Dashboard Overview</h2>
           <p className="text-sm text-gray-400 font-bold mt-1.5">Monitor laboratory status and pending diagnostics.</p>
         </div>
 
@@ -128,7 +128,7 @@ export default function AdminDashboard({
               >
                 <div>
                   <p className="text-xs font-bold text-rose-500 uppercase tracking-wider mb-2">{stat.title}</p>
-                  <h3 className="text-3xl font-extrabold text-[#ba1a1a] tracking-tight font-mono">{stat.value}</h3>
+                  <h3 className="text-3xl font-extrabold text-[#ba1a1a] tracking-tight font-mono font-[family-name:var(--font-heading)]">{stat.value}</h3>
                   <p className="text-rose-700 font-semibold text-[10px] mt-4.5 flex items-center gap-1">
                     <AlertTriangle className="w-3.5 h-3.5" />
                     <span>{stat.label}</span>
@@ -148,7 +148,7 @@ export default function AdminDashboard({
             >
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{stat.title}</p>
-                <h3 className="text-3xl font-extrabold text-slate-900 tracking-tight font-mono">{stat.value}</h3>
+                <h3 className="text-3xl font-extrabold text-slate-900 tracking-tight font-mono font-[family-name:var(--font-heading)]">{stat.value}</h3>
 
                 <p className={`text-[10px] font-bold mt-4.5 flex items-center gap-1 ${stat.isUp ? 'text-emerald-600' : 'text-gray-400'
                   }`}>
@@ -173,7 +173,7 @@ export default function AdminDashboard({
         <div className="lg:col-span-8 bg-white border border-[#c1c6d5]/40 rounded-2xl overflow-hidden shadow-sm">
 
           <div className="px-6 py-4 border-b border-[#c1c6d5]/40 flex justify-between items-center bg-slate-50">
-            <h3 className="font-bold text-[#191c1d] text-sm">Recent Diagnostics Reports</h3>
+            <h3 className="font-bold text-[#191c1d] text-sm font-[family-name:var(--font-heading)]">Recent Diagnostics Reports</h3>
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Operational Monitor</span>
           </div>
 
@@ -298,7 +298,7 @@ export default function AdminDashboard({
             />
             {/* Linear background overlay */}
             <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-900/40 to-transparent p-5 flex flex-col justify-end text-white">
-              <h4 className="font-bold text-base flex items-center gap-1.5">
+              <h4 className="font-bold text-base flex items-center gap-1.5 font-[family-name:var(--font-heading)]">
                 <Sparkles className="w-4 h-4 text-emerald-400" />
                 <span>Advanced Analytics</span>
               </h4>

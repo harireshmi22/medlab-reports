@@ -92,7 +92,7 @@ export default function ReportDetails({ report, onBack, patients }: ReportDetail
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-[#004e9f] font-bold">Report #{report.id}</span>
           </nav>
-          <h2 className="text-2xl font-extrabold text-[#191c1d] tracking-tight">{report.title}</h2>
+          <h2 className="text-2xl font-extrabold text-[#191c1d] tracking-tight font-[family-name:var(--font-heading)]">{report.title}</h2>
         </div>
         
         {/* Print & Download buttons */}
@@ -152,7 +152,7 @@ export default function ReportDetails({ report, onBack, patients }: ReportDetail
                 src={patient.avatar}
               />
               <div>
-                <h3 className="text-lg font-extrabold text-slate-900">{patient.name}</h3>
+                <h3 className="text-lg font-extrabold text-slate-900 font-[family-name:var(--font-heading)]">{patient.name}</h3>
                 <p className="text-xs text-gray-400 font-bold mt-1">Patient ID: {patient.id}</p>
               </div>
             </div>
@@ -250,7 +250,7 @@ export default function ReportDetails({ report, onBack, patients }: ReportDetail
             
             {/* Header row details */}
             <div className="bg-slate-50 px-6 py-4 border-b border-[#c1c6d5]/40 flex justify-between items-center">
-              <h3 className="font-bold text-[#191c1d] text-sm">Standard Chemistry Test Results</h3>
+              <h3 className="font-bold text-[#191c1d] text-sm font-[family-name:var(--font-heading)]">Standard Chemistry Test Results</h3>
               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Lab Ref: #{report.labRef}</span>
             </div>
 
@@ -345,7 +345,7 @@ export default function ReportDetails({ report, onBack, patients }: ReportDetail
           <div className="bg-white border border-[#c1c6d5]/40 rounded-2xl p-6 space-y-5 shadow-sm">
             <div className="flex items-center gap-2.5 text-[#004e9f] border-b border-gray-100 pb-3">
               <MessageSquare className="w-5 h-5 text-[#004e9f]" />
-              <h3 className="font-bold text-slate-900 text-sm">Doctor &amp; Lab Remarks</h3>
+              <h3 className="font-bold text-slate-900 text-sm font-[family-name:var(--font-heading)]">Doctor &amp; Lab Remarks</h3>
             </div>
 
             <div className="space-y-4 text-xs leading-relaxed text-gray-600">

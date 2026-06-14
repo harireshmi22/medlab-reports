@@ -195,7 +195,7 @@ export default function PatientDashboard({ onNavigateToReport, reports, currentU
       {/* Welcome & Interactive Actions */}
       <section className="bg-white p-8 rounded-2xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
         <div>
-          <h2 className="text-2xl font-extrabold text-[#191c1d] tracking-tight">Welcome back, {patientName}</h2>
+          <h2 className="text-2xl font-extrabold text-[#191c1d] tracking-tight font-[family-name:var(--font-heading)]">Welcome back, {patientName}</h2>
           <p className="text-sm text-gray-400 font-bold mt-1.5">Your health metrics are stable. Keep up the good work!</p>
         </div>
 
@@ -237,7 +237,7 @@ export default function PatientDashboard({ onNavigateToReport, reports, currentU
               </div>
             </div>
 
-            <p className="text-2xl font-extrabold text-[#191c1d] tracking-tight font-mono">
+            <p className="text-2xl font-extrabold text-[#191c1d] tracking-tight font-mono font-[family-name:var(--font-heading)]">
               {met.value} <span className="text-xs font-medium text-gray-400 ml-0.5">{met.unit}</span>
             </p>
 
@@ -256,7 +256,7 @@ export default function PatientDashboard({ onNavigateToReport, reports, currentU
         <div className="lg:col-span-8 bg-white p-6 rounded-2xl border border-[#c1c6d5]/45 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h3 className="font-bold text-[#191c1d] text-base">Hemoglobin Trend</h3>
+              <h3 className="font-bold text-[#191c1d] text-base font-[family-name:var(--font-heading)]">Hemoglobin Trend</h3>
               <p className="text-xs text-gray-400 mt-1">{activeTrendRange === '6M' ? '6' : '12'}-Month historical analysis</p>
             </div>
             
@@ -374,7 +374,7 @@ export default function PatientDashboard({ onNavigateToReport, reports, currentU
         {/* Report History Widgets list */}
         <div className="lg:col-span-4 bg-white p-6 rounded-2xl border border-[#c1c6d5]/45 flex flex-col h-full shadow-sm">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="font-bold text-[#191c1d] text-base">Report History</h3>
+            <h3 className="font-bold text-[#191c1d] text-base font-[family-name:var(--font-heading)]">Report History</h3>
             <button 
               onClick={() => onNavigateToReport(reports[0]?.id || '')}
               className="text-[#004e9f] hover:underline text-xs font-bold"
@@ -426,7 +426,7 @@ export default function PatientDashboard({ onNavigateToReport, reports, currentU
             <Info className="w-6 h-6 text-[#006a65]" />
           </div>
           <div className="flex-1">
-            <h4 className="text-sm font-bold text-slate-900 leading-none">Understanding Reference Ranges</h4>
+            <h4 className="text-sm font-bold text-slate-900 leading-none font-[family-name:var(--font-heading)]">Understanding Reference Ranges</h4>
             <p className="text-xs text-slate-500 mt-2 leading-relaxed font-semibold">
               Your laboratory results are compared to ranges determined by clinical studies. &quot;Normal&quot; signifies your value falls within the expected healthy demographic range. Consult your physician for a personalized interpretation of these findings.
             </p>

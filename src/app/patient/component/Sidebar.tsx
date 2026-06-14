@@ -114,7 +114,7 @@ export default function Sidebar({
                             <FlaskConical className="w-5.5 h-5.5" />
                         </div>
                         <div>
-                            <h1 className="font-bold text-lg text-[#004e9f] tracking-tight leading-none">MedLab Reports</h1>
+                            <h1 className="font-bold text-lg text-[#004e9f] tracking-tight leading-none font-[family-name:var(--font-heading)]">MedLab Reports</h1>
                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">Diagnostics Portal</p>
                         </div>
                     </div>
@@ -168,7 +168,7 @@ export default function Sidebar({
                             height={40}
                         />
                         <div className="overflow-hidden">
-                            <p id="usr-profile-name" className="text-xs font-bold truncate text-[#191c1d]">{userProfile.name}</p>
+                            <p id="usr-profile-name" className="text-xs font-bold truncate text-[#191c1d] font-[family-name:var(--font-heading)]">{userProfile.name}</p>
                             <p className="text-[10px] text-gray-400 font-medium truncate mt-0.5">{userProfile.title}</p>
                         </div>
                     </div>

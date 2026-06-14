@@ -10,8 +10,9 @@ export default function NotFound() {
     <div className="min-h-screen bg-gradient-to-br from-[#f0f4f8] via-[#e2e8f0] to-[#d9e2ec] flex items-center justify-center p-6 font-sans relative overflow-hidden">
       
       {/* Decorative background shapes for premium look */}
-      <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
+      <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl animate-pulse" />
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-teal-300/5 rounded-full blur-3xl" />
 
       {/* Main Glassmorphic Card */}
       <motion.div 
@@ -27,8 +28,8 @@ export default function NotFound() {
 
         {/* Clear and Simple Message */}
         <div className="space-y-2">
-          <span className="text-sm font-bold text-blue-600/80 uppercase tracking-widest font-mono">Error 404</span>
-          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Oops! Page not found</h1>
+          <span className="text-sm font-bold text-blue-600/80 uppercase tracking-widest font-mono font-[family-name:var(--font-heading)]">Error 404</span>
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight font-[family-name:var(--font-heading)]">Oops! Page not found</h1>
           <p className="text-xs text-slate-500 font-semibold leading-relaxed">
             We can&apos;t seem to find the page or laboratory log you are looking for. Let&apos;s get you back on track.
           </p>

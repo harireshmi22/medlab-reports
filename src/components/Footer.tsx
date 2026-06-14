@@ -11,7 +11,7 @@ const Footer = () => {
                         <div className="w-8 h-8 rounded-lg bg-[#004e9f] flex items-center justify-center text-white">
                             <FlaskConical className="w-4 h-4" />
                         </div>
-                        <span className="font-bold text-lg">MedLab Reports</span>
+                        <span className="font-bold text-lg font-[family-name:var(--font-heading)]">MedLab Reports</span>
                     </div>
                     <p className="text-slate-400 text-sm leading-relaxed">
                         Redefining laboratory diagnostics with real-time patient connectivity and enterprise-grade security.
@@ -20,7 +20,7 @@ const Footer = () => {
 
                 <div className="flex flex-col md:items-center">
                     <div className="flex flex-col gap-3">
-                        <h5 className="font-bold text-xs uppercase text-slate-300 tracking-wider mb-2">Quick Links</h5>
+                        <h5 className="font-bold text-xs uppercase text-slate-300 tracking-wider mb-2 font-[family-name:var(--font-heading)]">Quick Links</h5>
                         {['Terms of Service', 'Privacy Policy', 'Contact Support', 'Security'].map((link) => (
                             <a key={link} className="text-slate-400 hover:text-white transition-colors text-sm hover:underline cursor-pointer">
                                 {link}

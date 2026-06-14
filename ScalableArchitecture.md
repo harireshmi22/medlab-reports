@@ -115,7 +115,7 @@
 <span>Today: {new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</span>
 ```
 
---- // Fixed 
+--- // Fixed
 
 ### 🐛 Bug #4: Hardcoded Stats Values in AdminDashboard
 
@@ -232,7 +232,7 @@ useEffect(() => {
 }, []);
 ```
 
---- // Fixed 
+--- // Fixed
 
 ### 🐛 Bug #9: No RLS (Row Level Security) for DELETE Operations
 
@@ -275,7 +275,7 @@ const { data } = await supabase
   .order('created_at', { ascending: false });
 ```
 
---- // Fixed 
+--- // Fixed
 
 ### ⚠️ Bottleneck #2: No Server Components
 
@@ -325,34 +325,34 @@ function useDashboardData() {
 }
 ```
 
---- // Fixed 
+--- // Fixed
 
 ## 4. Recommended Scalable Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                    CDN (Vercel Edge)                      │
+│                    CDN (Vercel Edge)                     │
 │  Static assets, image optimization, edge caching         │
 └───────────────────┬──────────────────────────────────────┘
                     │
 ┌───────────────────┴──────────────────────────────────────┐
-│              Next.js Application                          │
+│              Next.js Application                         │
 │  ┌────────────────┐  ┌──────────────────────────────┐    │
-│  │ Server Comps   │  │ Client Components             │    │
-│  │ (Data Fetch)   │  │ (Interactive UI + State)      │    │
+│  │ Server Comps   │  │ Client Components            │    │
+│  │ (Data Fetch)   │  │ (Interactive UI + State)     │    │
 │  └────────┬───────┘  └──────────────┬───────────────┘    │
-│           │                         │                     │
+│           │                         │                    │
 │  ┌────────┴─────────────────────────┴───────────────┐    │
-│  │              API Routes (Route Handlers)           │    │
-│  │  /api/patient     (CRUD)                           │    │
-│  │  /api/reports     (CRUD + upload)                  │    │
-│  │  /api/dashboard   (aggregated stats)               │    │
-│  │  /api/auth        (login/logout/register)          │    │
+│  │              API Routes (Route Handlers)         │    │
+│  │  /api/patient     (CRUD)                         │    │
+│  │  /api/reports     (CRUD + upload)                │    │
+│  │  /api/dashboard   (aggregated stats)             │    │
+│  │  /api/auth        (login/logout/register)        │    │
 │  └──────────────────────┬───────────────────────────┘    │
 └─────────────────────────┬────────────────────────────────┘
                           │
-        ┌─────────────────┼──────────────────┐
-        │                 │                  │
+        ┌─────────────────┼─────────────────┐
+        │                 │                 │
 ┌───────┴───────┐ ┌───────┴───────┐ ┌───────┴───────┐
 │   Supabase    │ │   Redis       │ │   Object      │
 │   PostgreSQL  │ │   (Cache +    │ │   Storage     │
@@ -629,17 +629,17 @@ jobs:
 - [x] Default blood group to O+ with Rh factor
 - [x] Fix hardcoded dashboard date
 - [x] Fix motion/react vs framer-motion imports
-- [ ] Add missing RLS policies for UPDATE/DELETE
+- [x] Add missing RLS policies for UPDATE/DELETE
 - [x] Fix memory leak in AddReport interval
 
 ### Phase 2: Security Hardening (Week 2)
 
-- [ ] Implement middleware auth guards
+- [x] Implement middleware auth guards
 - [ ] Add rate limiting to API routes
 - [ ] Add input validation (client + server)
 - [ ] Add CSRF protection
-- [ ] Audit & fix all RLS policies
-- [ ] Add password field `type="password"`
+- [x] Audit & fix all RLS policies
+- [x] Add password field `type="password"`
 
 ### Phase 3: Performance (Week 3)
 

@@ -633,7 +633,7 @@ export default function PatientsPanel({
 
                 <div>
                   <label className={labelClass}>Login Password</label>
-                  <input type="text" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={inputClass} />
+                  <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={inputClass} />
                   <p className="text-[10px] text-slate-400 font-medium mt-1.5">Share this password with the patient for sign-in access.</p>
                 </div>
 
